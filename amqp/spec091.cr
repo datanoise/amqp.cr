@@ -1,4 +1,4 @@
-module AMPQ::Protocol
+module AMQP::Protocol
   FRAME_METHOD = 1
   FRAME_HEADER = 2
   FRAME_BODY = 3

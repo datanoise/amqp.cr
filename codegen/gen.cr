@@ -232,7 +232,7 @@ module CodeGen
     end
 
     indent = 0
-    iputs "module AMPQ::Protocol"
+    iputs "module AMQP::Protocol"
     do_indent do
       constants.each {|c| c.generate(io, indent)}
       classes.each {|c| c.generate(io, indent)}
