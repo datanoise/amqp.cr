@@ -141,7 +141,7 @@ module CodeGen
           bit = -1
           @fields.each do |f|
             if bit == -1 && f.bit?
-              iputs "bits = io.read_short"
+              iputs "bits = io.read_octet"
               bit = 0
             elsif bit > -1 && f.bit?
               bit += 1
@@ -163,7 +163,7 @@ module CodeGen
           @fields.each do |f|
             if bit > -1 && !f.bit?
               bit = -1
-              iputs "io.write_short(bits)"
+              iputs "io.write_octet(bits)"
             elsif bit > -1 && f.bit?
               bit += 1
             elsif bit == -1 && f.bit?
@@ -173,7 +173,7 @@ module CodeGen
             f.generate_encode(io, indent, bit)
           end
           if bit > -1
-            iputs "io.write_short(bits)"
+            iputs "io.write_octet(bits)"
           end
         end
         iputs "end"

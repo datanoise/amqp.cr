@@ -260,7 +260,7 @@ module AMQP::Protocol
       def self.decode(io)
         virtual_host = io.read_shortstr
         reserved_1 = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @reserved_2 = bits & (1 << 0)
         Open.new(virtual_host, reserved_1, reserved_2)
       end
@@ -270,7 +270,7 @@ module AMQP::Protocol
         io.write_shortstr(@reserved_1)
         bits = 0_u8
         bits = bits | (1 << 0) if @reserved_2
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -463,7 +463,7 @@ module AMQP::Protocol
       end
 
       def self.decode(io)
-        bits = io.read_short
+        bits = io.read_octet
         @active = bits & (1 << 0)
         Flow.new(active)
       end
@@ -471,7 +471,7 @@ module AMQP::Protocol
       def encode(io)
         bits = 0_u8
         bits = bits | (1 << 0) if @active
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -490,7 +490,7 @@ module AMQP::Protocol
       end
 
       def self.decode(io)
-        bits = io.read_short
+        bits = io.read_octet
         @active = bits & (1 << 0)
         FlowOk.new(active)
       end
@@ -498,7 +498,7 @@ module AMQP::Protocol
       def encode(io)
         bits = 0_u8
         bits = bits | (1 << 0) if @active
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -576,7 +576,7 @@ module AMQP::Protocol
         reserved_1 = io.read_short
         exchange = io.read_shortstr
         type = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @passive = bits & (1 << 0)
         @durable = bits & (1 << 1)
         @auto_delete = bits & (1 << 2)
@@ -596,7 +596,7 @@ module AMQP::Protocol
         bits = bits | (1 << 2) if @auto_delete
         bits = bits | (1 << 3) if @internal
         bits = bits | (1 << 4) if @no_wait
-        io.write_short(bits)
+        io.write_octet(bits)
         io.write_table(@arguments)
       end
     end
@@ -640,7 +640,7 @@ module AMQP::Protocol
       def self.decode(io)
         reserved_1 = io.read_short
         exchange = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @if_unused = bits & (1 << 0)
         @no_wait = bits & (1 << 1)
         Delete.new(reserved_1, exchange, if_unused, no_wait)
@@ -652,7 +652,7 @@ module AMQP::Protocol
         bits = 0_u8
         bits = bits | (1 << 0) if @if_unused
         bits = bits | (1 << 1) if @no_wait
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -697,7 +697,7 @@ module AMQP::Protocol
         destination = io.read_shortstr
         source = io.read_shortstr
         routing_key = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @no_wait = bits & (1 << 0)
         arguments = io.read_table
         Bind.new(reserved_1, destination, source, routing_key, no_wait, arguments)
@@ -710,7 +710,7 @@ module AMQP::Protocol
         io.write_shortstr(@routing_key)
         bits = 0_u8
         bits = bits | (1 << 0) if @no_wait
-        io.write_short(bits)
+        io.write_octet(bits)
         io.write_table(@arguments)
       end
     end
@@ -756,7 +756,7 @@ module AMQP::Protocol
         destination = io.read_shortstr
         source = io.read_shortstr
         routing_key = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @no_wait = bits & (1 << 0)
         arguments = io.read_table
         Unbind.new(reserved_1, destination, source, routing_key, no_wait, arguments)
@@ -769,7 +769,7 @@ module AMQP::Protocol
         io.write_shortstr(@routing_key)
         bits = 0_u8
         bits = bits | (1 << 0) if @no_wait
-        io.write_short(bits)
+        io.write_octet(bits)
         io.write_table(@arguments)
       end
     end
@@ -817,7 +817,7 @@ module AMQP::Protocol
       def self.decode(io)
         reserved_1 = io.read_short
         queue = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @passive = bits & (1 << 0)
         @durable = bits & (1 << 1)
         @exclusive = bits & (1 << 2)
@@ -836,7 +836,7 @@ module AMQP::Protocol
         bits = bits | (1 << 2) if @exclusive
         bits = bits | (1 << 3) if @auto_delete
         bits = bits | (1 << 4) if @no_wait
-        io.write_short(bits)
+        io.write_octet(bits)
         io.write_table(@arguments)
       end
     end
@@ -888,7 +888,7 @@ module AMQP::Protocol
         queue = io.read_shortstr
         exchange = io.read_shortstr
         routing_key = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @no_wait = bits & (1 << 0)
         arguments = io.read_table
         Bind.new(reserved_1, queue, exchange, routing_key, no_wait, arguments)
@@ -901,7 +901,7 @@ module AMQP::Protocol
         io.write_shortstr(@routing_key)
         bits = 0_u8
         bits = bits | (1 << 0) if @no_wait
-        io.write_short(bits)
+        io.write_octet(bits)
         io.write_table(@arguments)
       end
     end
@@ -999,7 +999,7 @@ module AMQP::Protocol
       def self.decode(io)
         reserved_1 = io.read_short
         queue = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @no_wait = bits & (1 << 0)
         Purge.new(reserved_1, queue, no_wait)
       end
@@ -1009,7 +1009,7 @@ module AMQP::Protocol
         io.write_shortstr(@queue)
         bits = 0_u8
         bits = bits | (1 << 0) if @no_wait
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1054,7 +1054,7 @@ module AMQP::Protocol
       def self.decode(io)
         reserved_1 = io.read_short
         queue = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @if_unused = bits & (1 << 0)
         @if_empty = bits & (1 << 1)
         @no_wait = bits & (1 << 2)
@@ -1068,7 +1068,7 @@ module AMQP::Protocol
         bits = bits | (1 << 0) if @if_unused
         bits = bits | (1 << 1) if @if_empty
         bits = bits | (1 << 2) if @no_wait
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1117,7 +1117,7 @@ module AMQP::Protocol
       def self.decode(io)
         prefetch_size = io.read_long
         prefetch_count = io.read_short
-        bits = io.read_short
+        bits = io.read_octet
         @global = bits & (1 << 0)
         Qos.new(prefetch_size, prefetch_count, global)
       end
@@ -1127,7 +1127,7 @@ module AMQP::Protocol
         io.write_short(@prefetch_count)
         bits = 0_u8
         bits = bits | (1 << 0) if @global
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1171,7 +1171,7 @@ module AMQP::Protocol
         reserved_1 = io.read_short
         queue = io.read_shortstr
         consumer_tag = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @no_local = bits & (1 << 0)
         @no_ack = bits & (1 << 1)
         @exclusive = bits & (1 << 2)
@@ -1189,7 +1189,7 @@ module AMQP::Protocol
         bits = bits | (1 << 1) if @no_ack
         bits = bits | (1 << 2) if @exclusive
         bits = bits | (1 << 3) if @no_wait
-        io.write_short(bits)
+        io.write_octet(bits)
         io.write_table(@arguments)
       end
     end
@@ -1234,7 +1234,7 @@ module AMQP::Protocol
 
       def self.decode(io)
         consumer_tag = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @no_wait = bits & (1 << 0)
         Cancel.new(consumer_tag, no_wait)
       end
@@ -1243,7 +1243,7 @@ module AMQP::Protocol
         io.write_shortstr(@consumer_tag)
         bits = 0_u8
         bits = bits | (1 << 0) if @no_wait
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1290,7 +1290,7 @@ module AMQP::Protocol
         reserved_1 = io.read_short
         exchange = io.read_shortstr
         routing_key = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @mandatory = bits & (1 << 0)
         @immediate = bits & (1 << 1)
         Publish.new(reserved_1, exchange, routing_key, mandatory, immediate)
@@ -1303,7 +1303,7 @@ module AMQP::Protocol
         bits = 0_u8
         bits = bits | (1 << 0) if @mandatory
         bits = bits | (1 << 1) if @immediate
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1356,7 +1356,7 @@ module AMQP::Protocol
       def self.decode(io)
         consumer_tag = io.read_shortstr
         delivery_tag = io.read_longlong
-        bits = io.read_short
+        bits = io.read_octet
         @redelivered = bits & (1 << 0)
         exchange = io.read_shortstr
         routing_key = io.read_shortstr
@@ -1368,7 +1368,7 @@ module AMQP::Protocol
         io.write_longlong(@delivery_tag)
         bits = 0_u8
         bits = bits | (1 << 0) if @redelivered
-        io.write_short(bits)
+        io.write_octet(bits)
         io.write_shortstr(@exchange)
         io.write_shortstr(@routing_key)
       end
@@ -1391,7 +1391,7 @@ module AMQP::Protocol
       def self.decode(io)
         reserved_1 = io.read_short
         queue = io.read_shortstr
-        bits = io.read_short
+        bits = io.read_octet
         @no_ack = bits & (1 << 0)
         Get.new(reserved_1, queue, no_ack)
       end
@@ -1401,7 +1401,7 @@ module AMQP::Protocol
         io.write_shortstr(@queue)
         bits = 0_u8
         bits = bits | (1 << 0) if @no_ack
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1422,7 +1422,7 @@ module AMQP::Protocol
 
       def self.decode(io)
         delivery_tag = io.read_longlong
-        bits = io.read_short
+        bits = io.read_octet
         @redelivered = bits & (1 << 0)
         exchange = io.read_shortstr
         routing_key = io.read_shortstr
@@ -1434,7 +1434,7 @@ module AMQP::Protocol
         io.write_longlong(@delivery_tag)
         bits = 0_u8
         bits = bits | (1 << 0) if @redelivered
-        io.write_short(bits)
+        io.write_octet(bits)
         io.write_shortstr(@exchange)
         io.write_shortstr(@routing_key)
         io.write_long(@message_count)
@@ -1481,7 +1481,7 @@ module AMQP::Protocol
 
       def self.decode(io)
         delivery_tag = io.read_longlong
-        bits = io.read_short
+        bits = io.read_octet
         @multiple = bits & (1 << 0)
         Ack.new(delivery_tag, multiple)
       end
@@ -1490,7 +1490,7 @@ module AMQP::Protocol
         io.write_longlong(@delivery_tag)
         bits = 0_u8
         bits = bits | (1 << 0) if @multiple
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1510,7 +1510,7 @@ module AMQP::Protocol
 
       def self.decode(io)
         delivery_tag = io.read_longlong
-        bits = io.read_short
+        bits = io.read_octet
         @requeue = bits & (1 << 0)
         Reject.new(delivery_tag, requeue)
       end
@@ -1519,7 +1519,7 @@ module AMQP::Protocol
         io.write_longlong(@delivery_tag)
         bits = 0_u8
         bits = bits | (1 << 0) if @requeue
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1538,7 +1538,7 @@ module AMQP::Protocol
       end
 
       def self.decode(io)
-        bits = io.read_short
+        bits = io.read_octet
         @requeue = bits & (1 << 0)
         RecoverAsync.new(requeue)
       end
@@ -1546,7 +1546,7 @@ module AMQP::Protocol
       def encode(io)
         bits = 0_u8
         bits = bits | (1 << 0) if @requeue
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1565,7 +1565,7 @@ module AMQP::Protocol
       end
 
       def self.decode(io)
-        bits = io.read_short
+        bits = io.read_octet
         @requeue = bits & (1 << 0)
         Recover.new(requeue)
       end
@@ -1573,7 +1573,7 @@ module AMQP::Protocol
       def encode(io)
         bits = 0_u8
         bits = bits | (1 << 0) if @requeue
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1615,7 +1615,7 @@ module AMQP::Protocol
 
       def self.decode(io)
         delivery_tag = io.read_longlong
-        bits = io.read_short
+        bits = io.read_octet
         @multiple = bits & (1 << 0)
         @requeue = bits & (1 << 1)
         Nack.new(delivery_tag, multiple, requeue)
@@ -1626,7 +1626,7 @@ module AMQP::Protocol
         bits = 0_u8
         bits = bits | (1 << 0) if @multiple
         bits = bits | (1 << 1) if @requeue
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
@@ -1785,7 +1785,7 @@ module AMQP::Protocol
       end
 
       def self.decode(io)
-        bits = io.read_short
+        bits = io.read_octet
         @nowait = bits & (1 << 0)
         Select.new(nowait)
       end
@@ -1793,7 +1793,7 @@ module AMQP::Protocol
       def encode(io)
         bits = 0_u8
         bits = bits | (1 << 0) if @nowait
-        io.write_short(bits)
+        io.write_octet(bits)
       end
     end
 
