@@ -71,12 +71,16 @@ module CodeGen
   end
 
   class Class
+    getter name
+    getter index
+    getter methods
+
     def initialize(@node)
       @name = @node["name"].not_nil!.classify
       @index = @node["index"].not_nil!.to_u32
       mnodes = @node.xpath("method") as XML::NodeSet
       @methods = mnodes.map do |mnode|
-        Method.new(mnode)
+        Method.new(self, mnode)
       end
     end
 
@@ -86,7 +90,7 @@ module CodeGen
         iputs "INDEX = #{@index}"
         io.puts
         @methods.each do |m|
-          m.generate(io, indent, @index)
+          m.generate(io, indent)
           io.puts
         end
       end
@@ -95,7 +99,10 @@ module CodeGen
   end
 
   class Method
-    def initialize(@node)
+    getter index
+    getter name
+
+    def initialize(@cls, @node)
       @name = @node["name"].not_nil!.classify
       @index = @node["index"].not_nil!.to_u32
       @has_content = @node["content"]? == "1"
@@ -106,13 +113,16 @@ module CodeGen
       end
     end
 
-    def generate(io, indent, class_index)
+    def generate(io, indent)
       iputs "class #{@name} < Method"
       do_indent do
         iputs "INDEX = #{@index}"
           if @has_content
             iputs "CONTENT = true"
           end
+
+        io.puts
+        iputs "getter #{@fields.map(&.name).join(", ")}"
 
         io.puts
         iputs "def initialize(#{@fields.map{|f| "@" + f.name}.join(", ")})"
@@ -122,7 +132,7 @@ module CodeGen
         # id method
         iputs "def id"
         do_indent do
-          iputs "[#{class_index}, #{@index}]"
+          iputs "[#{@cls.index}, #{@index}]"
         end
         iputs "end"
         io.puts
@@ -142,6 +152,7 @@ module CodeGen
           @fields.each do |f|
             if bit == -1 && f.bit?
               iputs "bits = io.read_octet"
+              iputs "raise FrameError.new unless bits"
               bit = 0
             elsif bit > -1 && f.bit?
               bit += 1
@@ -196,7 +207,7 @@ module CodeGen
 
     def generate_decode(io, indent, bit)
       if bit?
-        iputs "@#{@name} = bits & (1 << #{bit})"
+        iputs "#{@name} = bits & (1 << #{bit})"
       else
         iputs "#{@name} = io.read_#{@domain.type}"
       end
@@ -236,6 +247,38 @@ module CodeGen
     do_indent do
       constants.each {|c| c.generate(io, indent)}
       classes.each {|c| c.generate(io, indent)}
+      io.puts
+      iputs "class Method"
+      do_indent do
+        iputs "def self.parse_method(cls_id, meth_id, io)"
+        do_indent do
+          iputs "case cls_id"
+          classes.each do |c|
+            iputs "when #{c.index}"
+            do_indent do
+              iputs "case meth_id"
+              c.methods.each do |m|
+                iputs "when #{m.index}"
+                do_indent do
+                  iputs "#{c.name}::#{m.name}.decode(io)"
+                end
+              end
+              iputs "else"
+              do_indent do
+                iputs "raise FrameError.new(\"Invalid method index \#{cls_id}-\#{meth_id}\")"
+              end
+              iputs "end"
+            end
+          end
+          iputs "else"
+          do_indent do
+            iputs "raise FrameError.new(\"Invalid class index \#{cls_id}\")"
+          end
+          iputs "end"
+        end
+        iputs "end"
+      end
+      iputs "end"
     end
     iputs "end"
   end

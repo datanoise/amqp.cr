@@ -80,6 +80,8 @@ module AMQP::Protocol
     class Start < Method
       INDEX = 10
 
+      getter version_major, version_minor, server_properties, mechanisms, locales
+
       def initialize(@version_major, @version_minor, @server_properties, @mechanisms, @locales)
       end
 
@@ -112,6 +114,8 @@ module AMQP::Protocol
     class StartOk < Method
       INDEX = 11
 
+      getter client_properties, mechanism, response, locale
+
       def initialize(@client_properties, @mechanism, @response, @locale)
       end
 
@@ -142,6 +146,8 @@ module AMQP::Protocol
     class Secure < Method
       INDEX = 20
 
+      getter challenge
+
       def initialize(@challenge)
       end
 
@@ -166,6 +172,8 @@ module AMQP::Protocol
     class SecureOk < Method
       INDEX = 21
 
+      getter response
+
       def initialize(@response)
       end
 
@@ -189,6 +197,8 @@ module AMQP::Protocol
 
     class Tune < Method
       INDEX = 30
+
+      getter channel_max, frame_max, heartbeat
 
       def initialize(@channel_max, @frame_max, @heartbeat)
       end
@@ -218,6 +228,8 @@ module AMQP::Protocol
     class TuneOk < Method
       INDEX = 31
 
+      getter channel_max, frame_max, heartbeat
+
       def initialize(@channel_max, @frame_max, @heartbeat)
       end
 
@@ -246,6 +258,8 @@ module AMQP::Protocol
     class Open < Method
       INDEX = 40
 
+      getter virtual_host, reserved_1, reserved_2
+
       def initialize(@virtual_host, @reserved_1, @reserved_2)
       end
 
@@ -261,7 +275,8 @@ module AMQP::Protocol
         virtual_host = io.read_shortstr
         reserved_1 = io.read_shortstr
         bits = io.read_octet
-        @reserved_2 = bits & (1 << 0)
+        raise FrameError.new unless bits
+        reserved_2 = bits & (1 << 0)
         Open.new(virtual_host, reserved_1, reserved_2)
       end
 
@@ -276,6 +291,8 @@ module AMQP::Protocol
 
     class OpenOk < Method
       INDEX = 41
+
+      getter reserved_1
 
       def initialize(@reserved_1)
       end
@@ -300,6 +317,8 @@ module AMQP::Protocol
 
     class Close < Method
       INDEX = 50
+
+      getter reply_code, reply_text, class_id, method_id
 
       def initialize(@reply_code, @reply_text, @class_id, @method_id)
       end
@@ -331,6 +350,8 @@ module AMQP::Protocol
     class CloseOk < Method
       INDEX = 51
 
+      getter 
+
       def initialize()
       end
 
@@ -352,6 +373,8 @@ module AMQP::Protocol
 
     class Blocked < Method
       INDEX = 60
+
+      getter reason
 
       def initialize(@reason)
       end
@@ -376,6 +399,8 @@ module AMQP::Protocol
 
     class Unblocked < Method
       INDEX = 61
+
+      getter 
 
       def initialize()
       end
@@ -403,6 +428,8 @@ module AMQP::Protocol
     class Open < Method
       INDEX = 10
 
+      getter reserved_1
+
       def initialize(@reserved_1)
       end
 
@@ -426,6 +453,8 @@ module AMQP::Protocol
 
     class OpenOk < Method
       INDEX = 11
+
+      getter reserved_1
 
       def initialize(@reserved_1)
       end
@@ -451,6 +480,8 @@ module AMQP::Protocol
     class Flow < Method
       INDEX = 20
 
+      getter active
+
       def initialize(@active)
       end
 
@@ -464,7 +495,8 @@ module AMQP::Protocol
 
       def self.decode(io)
         bits = io.read_octet
-        @active = bits & (1 << 0)
+        raise FrameError.new unless bits
+        active = bits & (1 << 0)
         Flow.new(active)
       end
 
@@ -477,6 +509,8 @@ module AMQP::Protocol
 
     class FlowOk < Method
       INDEX = 21
+
+      getter active
 
       def initialize(@active)
       end
@@ -491,7 +525,8 @@ module AMQP::Protocol
 
       def self.decode(io)
         bits = io.read_octet
-        @active = bits & (1 << 0)
+        raise FrameError.new unless bits
+        active = bits & (1 << 0)
         FlowOk.new(active)
       end
 
@@ -504,6 +539,8 @@ module AMQP::Protocol
 
     class Close < Method
       INDEX = 40
+
+      getter reply_code, reply_text, class_id, method_id
 
       def initialize(@reply_code, @reply_text, @class_id, @method_id)
       end
@@ -535,6 +572,8 @@ module AMQP::Protocol
     class CloseOk < Method
       INDEX = 41
 
+      getter 
+
       def initialize()
       end
 
@@ -561,6 +600,8 @@ module AMQP::Protocol
     class Declare < Method
       INDEX = 10
 
+      getter reserved_1, exchange, type, passive, durable, auto_delete, internal, no_wait, arguments
+
       def initialize(@reserved_1, @exchange, @type, @passive, @durable, @auto_delete, @internal, @no_wait, @arguments)
       end
 
@@ -577,11 +618,12 @@ module AMQP::Protocol
         exchange = io.read_shortstr
         type = io.read_shortstr
         bits = io.read_octet
-        @passive = bits & (1 << 0)
-        @durable = bits & (1 << 1)
-        @auto_delete = bits & (1 << 2)
-        @internal = bits & (1 << 3)
-        @no_wait = bits & (1 << 4)
+        raise FrameError.new unless bits
+        passive = bits & (1 << 0)
+        durable = bits & (1 << 1)
+        auto_delete = bits & (1 << 2)
+        internal = bits & (1 << 3)
+        no_wait = bits & (1 << 4)
         arguments = io.read_table
         Declare.new(reserved_1, exchange, type, passive, durable, auto_delete, internal, no_wait, arguments)
       end
@@ -603,6 +645,8 @@ module AMQP::Protocol
 
     class DeclareOk < Method
       INDEX = 11
+
+      getter 
 
       def initialize()
       end
@@ -626,6 +670,8 @@ module AMQP::Protocol
     class Delete < Method
       INDEX = 20
 
+      getter reserved_1, exchange, if_unused, no_wait
+
       def initialize(@reserved_1, @exchange, @if_unused, @no_wait)
       end
 
@@ -641,8 +687,9 @@ module AMQP::Protocol
         reserved_1 = io.read_short
         exchange = io.read_shortstr
         bits = io.read_octet
-        @if_unused = bits & (1 << 0)
-        @no_wait = bits & (1 << 1)
+        raise FrameError.new unless bits
+        if_unused = bits & (1 << 0)
+        no_wait = bits & (1 << 1)
         Delete.new(reserved_1, exchange, if_unused, no_wait)
       end
 
@@ -658,6 +705,8 @@ module AMQP::Protocol
 
     class DeleteOk < Method
       INDEX = 21
+
+      getter 
 
       def initialize()
       end
@@ -681,6 +730,8 @@ module AMQP::Protocol
     class Bind < Method
       INDEX = 30
 
+      getter reserved_1, destination, source, routing_key, no_wait, arguments
+
       def initialize(@reserved_1, @destination, @source, @routing_key, @no_wait, @arguments)
       end
 
@@ -698,7 +749,8 @@ module AMQP::Protocol
         source = io.read_shortstr
         routing_key = io.read_shortstr
         bits = io.read_octet
-        @no_wait = bits & (1 << 0)
+        raise FrameError.new unless bits
+        no_wait = bits & (1 << 0)
         arguments = io.read_table
         Bind.new(reserved_1, destination, source, routing_key, no_wait, arguments)
       end
@@ -717,6 +769,8 @@ module AMQP::Protocol
 
     class BindOk < Method
       INDEX = 31
+
+      getter 
 
       def initialize()
       end
@@ -740,6 +794,8 @@ module AMQP::Protocol
     class Unbind < Method
       INDEX = 40
 
+      getter reserved_1, destination, source, routing_key, no_wait, arguments
+
       def initialize(@reserved_1, @destination, @source, @routing_key, @no_wait, @arguments)
       end
 
@@ -757,7 +813,8 @@ module AMQP::Protocol
         source = io.read_shortstr
         routing_key = io.read_shortstr
         bits = io.read_octet
-        @no_wait = bits & (1 << 0)
+        raise FrameError.new unless bits
+        no_wait = bits & (1 << 0)
         arguments = io.read_table
         Unbind.new(reserved_1, destination, source, routing_key, no_wait, arguments)
       end
@@ -776,6 +833,8 @@ module AMQP::Protocol
 
     class UnbindOk < Method
       INDEX = 51
+
+      getter 
 
       def initialize()
       end
@@ -803,6 +862,8 @@ module AMQP::Protocol
     class Declare < Method
       INDEX = 10
 
+      getter reserved_1, queue, passive, durable, exclusive, auto_delete, no_wait, arguments
+
       def initialize(@reserved_1, @queue, @passive, @durable, @exclusive, @auto_delete, @no_wait, @arguments)
       end
 
@@ -818,11 +879,12 @@ module AMQP::Protocol
         reserved_1 = io.read_short
         queue = io.read_shortstr
         bits = io.read_octet
-        @passive = bits & (1 << 0)
-        @durable = bits & (1 << 1)
-        @exclusive = bits & (1 << 2)
-        @auto_delete = bits & (1 << 3)
-        @no_wait = bits & (1 << 4)
+        raise FrameError.new unless bits
+        passive = bits & (1 << 0)
+        durable = bits & (1 << 1)
+        exclusive = bits & (1 << 2)
+        auto_delete = bits & (1 << 3)
+        no_wait = bits & (1 << 4)
         arguments = io.read_table
         Declare.new(reserved_1, queue, passive, durable, exclusive, auto_delete, no_wait, arguments)
       end
@@ -843,6 +905,8 @@ module AMQP::Protocol
 
     class DeclareOk < Method
       INDEX = 11
+
+      getter queue, message_count, consumer_count
 
       def initialize(@queue, @message_count, @consumer_count)
       end
@@ -872,6 +936,8 @@ module AMQP::Protocol
     class Bind < Method
       INDEX = 20
 
+      getter reserved_1, queue, exchange, routing_key, no_wait, arguments
+
       def initialize(@reserved_1, @queue, @exchange, @routing_key, @no_wait, @arguments)
       end
 
@@ -889,7 +955,8 @@ module AMQP::Protocol
         exchange = io.read_shortstr
         routing_key = io.read_shortstr
         bits = io.read_octet
-        @no_wait = bits & (1 << 0)
+        raise FrameError.new unless bits
+        no_wait = bits & (1 << 0)
         arguments = io.read_table
         Bind.new(reserved_1, queue, exchange, routing_key, no_wait, arguments)
       end
@@ -908,6 +975,8 @@ module AMQP::Protocol
 
     class BindOk < Method
       INDEX = 21
+
+      getter 
 
       def initialize()
       end
@@ -930,6 +999,8 @@ module AMQP::Protocol
 
     class Unbind < Method
       INDEX = 50
+
+      getter reserved_1, queue, exchange, routing_key, arguments
 
       def initialize(@reserved_1, @queue, @exchange, @routing_key, @arguments)
       end
@@ -963,6 +1034,8 @@ module AMQP::Protocol
     class UnbindOk < Method
       INDEX = 51
 
+      getter 
+
       def initialize()
       end
 
@@ -985,6 +1058,8 @@ module AMQP::Protocol
     class Purge < Method
       INDEX = 30
 
+      getter reserved_1, queue, no_wait
+
       def initialize(@reserved_1, @queue, @no_wait)
       end
 
@@ -1000,7 +1075,8 @@ module AMQP::Protocol
         reserved_1 = io.read_short
         queue = io.read_shortstr
         bits = io.read_octet
-        @no_wait = bits & (1 << 0)
+        raise FrameError.new unless bits
+        no_wait = bits & (1 << 0)
         Purge.new(reserved_1, queue, no_wait)
       end
 
@@ -1015,6 +1091,8 @@ module AMQP::Protocol
 
     class PurgeOk < Method
       INDEX = 31
+
+      getter message_count
 
       def initialize(@message_count)
       end
@@ -1040,6 +1118,8 @@ module AMQP::Protocol
     class Delete < Method
       INDEX = 40
 
+      getter reserved_1, queue, if_unused, if_empty, no_wait
+
       def initialize(@reserved_1, @queue, @if_unused, @if_empty, @no_wait)
       end
 
@@ -1055,9 +1135,10 @@ module AMQP::Protocol
         reserved_1 = io.read_short
         queue = io.read_shortstr
         bits = io.read_octet
-        @if_unused = bits & (1 << 0)
-        @if_empty = bits & (1 << 1)
-        @no_wait = bits & (1 << 2)
+        raise FrameError.new unless bits
+        if_unused = bits & (1 << 0)
+        if_empty = bits & (1 << 1)
+        no_wait = bits & (1 << 2)
         Delete.new(reserved_1, queue, if_unused, if_empty, no_wait)
       end
 
@@ -1074,6 +1155,8 @@ module AMQP::Protocol
 
     class DeleteOk < Method
       INDEX = 41
+
+      getter message_count
 
       def initialize(@message_count)
       end
@@ -1103,6 +1186,8 @@ module AMQP::Protocol
     class Qos < Method
       INDEX = 10
 
+      getter prefetch_size, prefetch_count, global
+
       def initialize(@prefetch_size, @prefetch_count, @global)
       end
 
@@ -1118,7 +1203,8 @@ module AMQP::Protocol
         prefetch_size = io.read_long
         prefetch_count = io.read_short
         bits = io.read_octet
-        @global = bits & (1 << 0)
+        raise FrameError.new unless bits
+        global = bits & (1 << 0)
         Qos.new(prefetch_size, prefetch_count, global)
       end
 
@@ -1133,6 +1219,8 @@ module AMQP::Protocol
 
     class QosOk < Method
       INDEX = 11
+
+      getter 
 
       def initialize()
       end
@@ -1156,6 +1244,8 @@ module AMQP::Protocol
     class Consume < Method
       INDEX = 20
 
+      getter reserved_1, queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments
+
       def initialize(@reserved_1, @queue, @consumer_tag, @no_local, @no_ack, @exclusive, @no_wait, @arguments)
       end
 
@@ -1172,10 +1262,11 @@ module AMQP::Protocol
         queue = io.read_shortstr
         consumer_tag = io.read_shortstr
         bits = io.read_octet
-        @no_local = bits & (1 << 0)
-        @no_ack = bits & (1 << 1)
-        @exclusive = bits & (1 << 2)
-        @no_wait = bits & (1 << 3)
+        raise FrameError.new unless bits
+        no_local = bits & (1 << 0)
+        no_ack = bits & (1 << 1)
+        exclusive = bits & (1 << 2)
+        no_wait = bits & (1 << 3)
         arguments = io.read_table
         Consume.new(reserved_1, queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments)
       end
@@ -1196,6 +1287,8 @@ module AMQP::Protocol
 
     class ConsumeOk < Method
       INDEX = 21
+
+      getter consumer_tag
 
       def initialize(@consumer_tag)
       end
@@ -1221,6 +1314,8 @@ module AMQP::Protocol
     class Cancel < Method
       INDEX = 30
 
+      getter consumer_tag, no_wait
+
       def initialize(@consumer_tag, @no_wait)
       end
 
@@ -1235,7 +1330,8 @@ module AMQP::Protocol
       def self.decode(io)
         consumer_tag = io.read_shortstr
         bits = io.read_octet
-        @no_wait = bits & (1 << 0)
+        raise FrameError.new unless bits
+        no_wait = bits & (1 << 0)
         Cancel.new(consumer_tag, no_wait)
       end
 
@@ -1249,6 +1345,8 @@ module AMQP::Protocol
 
     class CancelOk < Method
       INDEX = 31
+
+      getter consumer_tag
 
       def initialize(@consumer_tag)
       end
@@ -1275,6 +1373,8 @@ module AMQP::Protocol
       INDEX = 40
       CONTENT = true
 
+      getter reserved_1, exchange, routing_key, mandatory, immediate
+
       def initialize(@reserved_1, @exchange, @routing_key, @mandatory, @immediate)
       end
 
@@ -1291,8 +1391,9 @@ module AMQP::Protocol
         exchange = io.read_shortstr
         routing_key = io.read_shortstr
         bits = io.read_octet
-        @mandatory = bits & (1 << 0)
-        @immediate = bits & (1 << 1)
+        raise FrameError.new unless bits
+        mandatory = bits & (1 << 0)
+        immediate = bits & (1 << 1)
         Publish.new(reserved_1, exchange, routing_key, mandatory, immediate)
       end
 
@@ -1310,6 +1411,8 @@ module AMQP::Protocol
     class Return < Method
       INDEX = 50
       CONTENT = true
+
+      getter reply_code, reply_text, exchange, routing_key
 
       def initialize(@reply_code, @reply_text, @exchange, @routing_key)
       end
@@ -1342,6 +1445,8 @@ module AMQP::Protocol
       INDEX = 60
       CONTENT = true
 
+      getter consumer_tag, delivery_tag, redelivered, exchange, routing_key
+
       def initialize(@consumer_tag, @delivery_tag, @redelivered, @exchange, @routing_key)
       end
 
@@ -1357,7 +1462,8 @@ module AMQP::Protocol
         consumer_tag = io.read_shortstr
         delivery_tag = io.read_longlong
         bits = io.read_octet
-        @redelivered = bits & (1 << 0)
+        raise FrameError.new unless bits
+        redelivered = bits & (1 << 0)
         exchange = io.read_shortstr
         routing_key = io.read_shortstr
         Deliver.new(consumer_tag, delivery_tag, redelivered, exchange, routing_key)
@@ -1377,6 +1483,8 @@ module AMQP::Protocol
     class Get < Method
       INDEX = 70
 
+      getter reserved_1, queue, no_ack
+
       def initialize(@reserved_1, @queue, @no_ack)
       end
 
@@ -1392,7 +1500,8 @@ module AMQP::Protocol
         reserved_1 = io.read_short
         queue = io.read_shortstr
         bits = io.read_octet
-        @no_ack = bits & (1 << 0)
+        raise FrameError.new unless bits
+        no_ack = bits & (1 << 0)
         Get.new(reserved_1, queue, no_ack)
       end
 
@@ -1409,6 +1518,8 @@ module AMQP::Protocol
       INDEX = 71
       CONTENT = true
 
+      getter delivery_tag, redelivered, exchange, routing_key, message_count
+
       def initialize(@delivery_tag, @redelivered, @exchange, @routing_key, @message_count)
       end
 
@@ -1423,7 +1534,8 @@ module AMQP::Protocol
       def self.decode(io)
         delivery_tag = io.read_longlong
         bits = io.read_octet
-        @redelivered = bits & (1 << 0)
+        raise FrameError.new unless bits
+        redelivered = bits & (1 << 0)
         exchange = io.read_shortstr
         routing_key = io.read_shortstr
         message_count = io.read_long
@@ -1443,6 +1555,8 @@ module AMQP::Protocol
 
     class GetEmpty < Method
       INDEX = 72
+
+      getter reserved_1
 
       def initialize(@reserved_1)
       end
@@ -1468,6 +1582,8 @@ module AMQP::Protocol
     class Ack < Method
       INDEX = 80
 
+      getter delivery_tag, multiple
+
       def initialize(@delivery_tag, @multiple)
       end
 
@@ -1482,7 +1598,8 @@ module AMQP::Protocol
       def self.decode(io)
         delivery_tag = io.read_longlong
         bits = io.read_octet
-        @multiple = bits & (1 << 0)
+        raise FrameError.new unless bits
+        multiple = bits & (1 << 0)
         Ack.new(delivery_tag, multiple)
       end
 
@@ -1496,6 +1613,8 @@ module AMQP::Protocol
 
     class Reject < Method
       INDEX = 90
+
+      getter delivery_tag, requeue
 
       def initialize(@delivery_tag, @requeue)
       end
@@ -1511,7 +1630,8 @@ module AMQP::Protocol
       def self.decode(io)
         delivery_tag = io.read_longlong
         bits = io.read_octet
-        @requeue = bits & (1 << 0)
+        raise FrameError.new unless bits
+        requeue = bits & (1 << 0)
         Reject.new(delivery_tag, requeue)
       end
 
@@ -1526,6 +1646,8 @@ module AMQP::Protocol
     class RecoverAsync < Method
       INDEX = 100
 
+      getter requeue
+
       def initialize(@requeue)
       end
 
@@ -1539,7 +1661,8 @@ module AMQP::Protocol
 
       def self.decode(io)
         bits = io.read_octet
-        @requeue = bits & (1 << 0)
+        raise FrameError.new unless bits
+        requeue = bits & (1 << 0)
         RecoverAsync.new(requeue)
       end
 
@@ -1552,6 +1675,8 @@ module AMQP::Protocol
 
     class Recover < Method
       INDEX = 110
+
+      getter requeue
 
       def initialize(@requeue)
       end
@@ -1566,7 +1691,8 @@ module AMQP::Protocol
 
       def self.decode(io)
         bits = io.read_octet
-        @requeue = bits & (1 << 0)
+        raise FrameError.new unless bits
+        requeue = bits & (1 << 0)
         Recover.new(requeue)
       end
 
@@ -1579,6 +1705,8 @@ module AMQP::Protocol
 
     class RecoverOk < Method
       INDEX = 111
+
+      getter 
 
       def initialize()
       end
@@ -1602,6 +1730,8 @@ module AMQP::Protocol
     class Nack < Method
       INDEX = 120
 
+      getter delivery_tag, multiple, requeue
+
       def initialize(@delivery_tag, @multiple, @requeue)
       end
 
@@ -1616,8 +1746,9 @@ module AMQP::Protocol
       def self.decode(io)
         delivery_tag = io.read_longlong
         bits = io.read_octet
-        @multiple = bits & (1 << 0)
-        @requeue = bits & (1 << 1)
+        raise FrameError.new unless bits
+        multiple = bits & (1 << 0)
+        requeue = bits & (1 << 1)
         Nack.new(delivery_tag, multiple, requeue)
       end
 
@@ -1636,6 +1767,8 @@ module AMQP::Protocol
 
     class Select < Method
       INDEX = 10
+
+      getter 
 
       def initialize()
       end
@@ -1659,6 +1792,8 @@ module AMQP::Protocol
     class SelectOk < Method
       INDEX = 11
 
+      getter 
+
       def initialize()
       end
 
@@ -1680,6 +1815,8 @@ module AMQP::Protocol
 
     class Commit < Method
       INDEX = 20
+
+      getter 
 
       def initialize()
       end
@@ -1703,6 +1840,8 @@ module AMQP::Protocol
     class CommitOk < Method
       INDEX = 21
 
+      getter 
+
       def initialize()
       end
 
@@ -1725,6 +1864,8 @@ module AMQP::Protocol
     class Rollback < Method
       INDEX = 30
 
+      getter 
+
       def initialize()
       end
 
@@ -1746,6 +1887,8 @@ module AMQP::Protocol
 
     class RollbackOk < Method
       INDEX = 31
+
+      getter 
 
       def initialize()
       end
@@ -1773,6 +1916,8 @@ module AMQP::Protocol
     class Select < Method
       INDEX = 10
 
+      getter nowait
+
       def initialize(@nowait)
       end
 
@@ -1786,7 +1931,8 @@ module AMQP::Protocol
 
       def self.decode(io)
         bits = io.read_octet
-        @nowait = bits & (1 << 0)
+        raise FrameError.new unless bits
+        nowait = bits & (1 << 0)
         Select.new(nowait)
       end
 
@@ -1799,6 +1945,8 @@ module AMQP::Protocol
 
     class SelectOk < Method
       INDEX = 11
+
+      getter 
 
       def initialize()
       end
@@ -1819,5 +1967,173 @@ module AMQP::Protocol
       end
     end
 
+  end
+
+  class Method
+    def self.parse_method(cls_id, meth_id, io)
+      case cls_id
+      when 10
+        case meth_id
+        when 10
+          Connection::Start.decode(io)
+        when 11
+          Connection::StartOk.decode(io)
+        when 20
+          Connection::Secure.decode(io)
+        when 21
+          Connection::SecureOk.decode(io)
+        when 30
+          Connection::Tune.decode(io)
+        when 31
+          Connection::TuneOk.decode(io)
+        when 40
+          Connection::Open.decode(io)
+        when 41
+          Connection::OpenOk.decode(io)
+        when 50
+          Connection::Close.decode(io)
+        when 51
+          Connection::CloseOk.decode(io)
+        when 60
+          Connection::Blocked.decode(io)
+        when 61
+          Connection::Unblocked.decode(io)
+        else
+          raise FrameError.new("Invalid method index #{cls_id}-#{meth_id}")
+        end
+      when 20
+        case meth_id
+        when 10
+          Channel::Open.decode(io)
+        when 11
+          Channel::OpenOk.decode(io)
+        when 20
+          Channel::Flow.decode(io)
+        when 21
+          Channel::FlowOk.decode(io)
+        when 40
+          Channel::Close.decode(io)
+        when 41
+          Channel::CloseOk.decode(io)
+        else
+          raise FrameError.new("Invalid method index #{cls_id}-#{meth_id}")
+        end
+      when 40
+        case meth_id
+        when 10
+          Exchange::Declare.decode(io)
+        when 11
+          Exchange::DeclareOk.decode(io)
+        when 20
+          Exchange::Delete.decode(io)
+        when 21
+          Exchange::DeleteOk.decode(io)
+        when 30
+          Exchange::Bind.decode(io)
+        when 31
+          Exchange::BindOk.decode(io)
+        when 40
+          Exchange::Unbind.decode(io)
+        when 51
+          Exchange::UnbindOk.decode(io)
+        else
+          raise FrameError.new("Invalid method index #{cls_id}-#{meth_id}")
+        end
+      when 50
+        case meth_id
+        when 10
+          Queue::Declare.decode(io)
+        when 11
+          Queue::DeclareOk.decode(io)
+        when 20
+          Queue::Bind.decode(io)
+        when 21
+          Queue::BindOk.decode(io)
+        when 50
+          Queue::Unbind.decode(io)
+        when 51
+          Queue::UnbindOk.decode(io)
+        when 30
+          Queue::Purge.decode(io)
+        when 31
+          Queue::PurgeOk.decode(io)
+        when 40
+          Queue::Delete.decode(io)
+        when 41
+          Queue::DeleteOk.decode(io)
+        else
+          raise FrameError.new("Invalid method index #{cls_id}-#{meth_id}")
+        end
+      when 60
+        case meth_id
+        when 10
+          Basic::Qos.decode(io)
+        when 11
+          Basic::QosOk.decode(io)
+        when 20
+          Basic::Consume.decode(io)
+        when 21
+          Basic::ConsumeOk.decode(io)
+        when 30
+          Basic::Cancel.decode(io)
+        when 31
+          Basic::CancelOk.decode(io)
+        when 40
+          Basic::Publish.decode(io)
+        when 50
+          Basic::Return.decode(io)
+        when 60
+          Basic::Deliver.decode(io)
+        when 70
+          Basic::Get.decode(io)
+        when 71
+          Basic::GetOk.decode(io)
+        when 72
+          Basic::GetEmpty.decode(io)
+        when 80
+          Basic::Ack.decode(io)
+        when 90
+          Basic::Reject.decode(io)
+        when 100
+          Basic::RecoverAsync.decode(io)
+        when 110
+          Basic::Recover.decode(io)
+        when 111
+          Basic::RecoverOk.decode(io)
+        when 120
+          Basic::Nack.decode(io)
+        else
+          raise FrameError.new("Invalid method index #{cls_id}-#{meth_id}")
+        end
+      when 90
+        case meth_id
+        when 10
+          Tx::Select.decode(io)
+        when 11
+          Tx::SelectOk.decode(io)
+        when 20
+          Tx::Commit.decode(io)
+        when 21
+          Tx::CommitOk.decode(io)
+        when 30
+          Tx::Rollback.decode(io)
+        when 31
+          Tx::RollbackOk.decode(io)
+        else
+          raise FrameError.new("Invalid method index #{cls_id}-#{meth_id}")
+        end
+      when 85
+        case meth_id
+        when 10
+          Confirm::Select.decode(io)
+        when 11
+          Confirm::SelectOk.decode(io)
+        else
+          raise FrameError.new("Invalid method index #{cls_id}-#{meth_id}")
+        end
+      else
+        raise FrameError.new("Invalid class index #{cls_id}")
+      end
+    end
   end
 end
