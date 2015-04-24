@@ -41,6 +41,7 @@ class AMQP::Engine
   end
 
   def close
+    return if @closed
     @closed = true
     @sends.send(Time.now)
     @socket.close
@@ -49,6 +50,7 @@ class AMQP::Engine
   private def process_frames
     loop do
       frame = Protocol::Frame.decode(@io)
+      # puts frame
 
       case frame
       when Protocol::MethodFrame
@@ -64,6 +66,12 @@ class AMQP::Engine
       else
         raise Protocol::FrameError.new "Invalid frame type received"
       end
+    end
+  rescue ex: Errno
+    unless ex.errno == Errno::EBADF
+      puts ex
+      puts ex.backtrace.join("\n")
+      close
     end
   rescue ex
     puts ex

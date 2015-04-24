@@ -188,6 +188,20 @@ module CodeGen
           end
         end
         iputs "end"
+
+        # to_s method
+        io.puts
+        iputs "def to_s(io)"
+        do_indent do
+          iputs "io << \"#{@cls.name}.#{@name}(\""
+          @fields.each_with_index do |f, idx|
+            iputs "io << \"#{f.name}: \""
+            iputs "#{f.name}.inspect(io)"
+            iputs "io << \", \"" if idx < @fields.length - 1
+          end
+          iputs "io << \")\""
+        end
+        iputs "end"
       end
       iputs "end"
     end

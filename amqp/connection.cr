@@ -33,6 +33,8 @@ module AMQP
     DefaultProduct = "http://github.com/datanoise/amqp.cr"
     DefaultVersion = "0.1"
 
+    alias Methods = Protocol::Connection
+
     getter config
 
     def initialize(@config = Config.new)
@@ -51,6 +53,9 @@ module AMQP
     end
 
     def close
+      close = Methods::Close.new(Protocol::REPLY_SUCCESS.to_u16, "bye now", 0_u16, 0_u16)
+      @engine.send(@channel_id, close)
+      close_ok = @engine.receive
       @engine.close
     end
 
@@ -63,7 +68,7 @@ module AMQP
       @engine.start_reader
 
       start = @engine.receive
-      unless start.is_a?(Protocol::Connection::Start)
+      unless start.is_a?(Methods::Start)
         raise Protocol::FrameError.new("Unexpected method #{start.id}")
       end
       @version_major = start.version_major
@@ -78,12 +83,12 @@ module AMQP
       capabilities["consumer_cancel_notify"] = true
       auth = Auth.get_authenticator(start.mechanisms)
 
-      start_ok = Protocol::Connection::StartOk.new(
+      start_ok = Methods::StartOk.new(
         client_properties, "PLAIN", auth.response(@config.username, @config.password), "")
       @engine.send(@channel_id, start_ok)
 
       tune = @engine.receive
-      unless tune.is_a?(Protocol::Connection::Tune)
+      unless tune.is_a?(Methods::Tune)
         raise Protocol::FrameError.new("Unexpected method #{tune.id}")
       end
 
@@ -98,16 +103,16 @@ module AMQP
       @config.frame_max = pick.call(@config.frame_max.to_u32, tune.frame_max.to_u32).to_u32
       @config.heartbeat = pick.call(@config.heartbeat.total_seconds.to_u32, tune.heartbeat.to_u32).seconds
 
-      tune_ok = Protocol::Connection::TuneOk.new(
+      tune_ok = Methods::TuneOk.new(
         @config.channel_max, @config.frame_max, @config.heartbeat.total_seconds.to_u16)
       @engine.send(@channel_id, tune_ok)
 
       @engine.start_heartbeater
 
-      open = Protocol::Connection::Open.new(@config.vhost, "", false)
+      open = Methods::Open.new(@config.vhost, "", false)
       @engine.send(@channel_id, open)
       open_ok = @engine.receive
-      unless open_ok.is_a?(Protocol::Connection::OpenOk)
+      unless open_ok.is_a?(Methods::OpenOk)
         raise Protocol::FrameError.new("Unexpected method #{open_ok.id}")
       end
     end

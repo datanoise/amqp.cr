@@ -138,6 +138,25 @@ module AMQP::Protocol
         io.write_longstr(@mechanisms)
         io.write_longstr(@locales)
       end
+
+      def to_s(io)
+        io << "Connection.Start("
+        io << "version_major: "
+        version_major.inspect(io)
+        io << ", "
+        io << "version_minor: "
+        version_minor.inspect(io)
+        io << ", "
+        io << "server_properties: "
+        server_properties.inspect(io)
+        io << ", "
+        io << "mechanisms: "
+        mechanisms.inspect(io)
+        io << ", "
+        io << "locales: "
+        locales.inspect(io)
+        io << ")"
+      end
     end
 
     class StartOk < Method
@@ -174,6 +193,22 @@ module AMQP::Protocol
         io.write_longstr(@response)
         io.write_shortstr(@locale)
       end
+
+      def to_s(io)
+        io << "Connection.StartOk("
+        io << "client_properties: "
+        client_properties.inspect(io)
+        io << ", "
+        io << "mechanism: "
+        mechanism.inspect(io)
+        io << ", "
+        io << "response: "
+        response.inspect(io)
+        io << ", "
+        io << "locale: "
+        locale.inspect(io)
+        io << ")"
+      end
     end
 
     class Secure < Method
@@ -201,6 +236,13 @@ module AMQP::Protocol
       def encode(io)
         io.write_longstr(@challenge)
       end
+
+      def to_s(io)
+        io << "Connection.Secure("
+        io << "challenge: "
+        challenge.inspect(io)
+        io << ")"
+      end
     end
 
     class SecureOk < Method
@@ -227,6 +269,13 @@ module AMQP::Protocol
 
       def encode(io)
         io.write_longstr(@response)
+      end
+
+      def to_s(io)
+        io << "Connection.SecureOk("
+        io << "response: "
+        response.inspect(io)
+        io << ")"
       end
     end
 
@@ -261,6 +310,19 @@ module AMQP::Protocol
         io.write_long(@frame_max)
         io.write_short(@heartbeat)
       end
+
+      def to_s(io)
+        io << "Connection.Tune("
+        io << "channel_max: "
+        channel_max.inspect(io)
+        io << ", "
+        io << "frame_max: "
+        frame_max.inspect(io)
+        io << ", "
+        io << "heartbeat: "
+        heartbeat.inspect(io)
+        io << ")"
+      end
     end
 
     class TuneOk < Method
@@ -293,6 +355,19 @@ module AMQP::Protocol
         io.write_short(@channel_max)
         io.write_long(@frame_max)
         io.write_short(@heartbeat)
+      end
+
+      def to_s(io)
+        io << "Connection.TuneOk("
+        io << "channel_max: "
+        channel_max.inspect(io)
+        io << ", "
+        io << "frame_max: "
+        frame_max.inspect(io)
+        io << ", "
+        io << "heartbeat: "
+        heartbeat.inspect(io)
+        io << ")"
       end
     end
 
@@ -330,6 +405,19 @@ module AMQP::Protocol
         bits = bits | (1 << 0) if @reserved_2
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Connection.Open("
+        io << "virtual_host: "
+        virtual_host.inspect(io)
+        io << ", "
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "reserved_2: "
+        reserved_2.inspect(io)
+        io << ")"
+      end
     end
 
     class OpenOk < Method
@@ -356,6 +444,13 @@ module AMQP::Protocol
 
       def encode(io)
         io.write_shortstr(@reserved_1)
+      end
+
+      def to_s(io)
+        io << "Connection.OpenOk("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ")"
       end
     end
 
@@ -393,6 +488,22 @@ module AMQP::Protocol
         io.write_short(@class_id)
         io.write_short(@method_id)
       end
+
+      def to_s(io)
+        io << "Connection.Close("
+        io << "reply_code: "
+        reply_code.inspect(io)
+        io << ", "
+        io << "reply_text: "
+        reply_text.inspect(io)
+        io << ", "
+        io << "class_id: "
+        class_id.inspect(io)
+        io << ", "
+        io << "method_id: "
+        method_id.inspect(io)
+        io << ")"
+      end
     end
 
     class CloseOk < Method
@@ -416,6 +527,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Connection.CloseOk("
+        io << ")"
       end
     end
 
@@ -444,6 +560,13 @@ module AMQP::Protocol
       def encode(io)
         io.write_shortstr(@reason)
       end
+
+      def to_s(io)
+        io << "Connection.Blocked("
+        io << "reason: "
+        reason.inspect(io)
+        io << ")"
+      end
     end
 
     class Unblocked < Method
@@ -467,6 +590,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Connection.Unblocked("
+        io << ")"
       end
     end
 
@@ -500,6 +628,13 @@ module AMQP::Protocol
       def encode(io)
         io.write_shortstr(@reserved_1)
       end
+
+      def to_s(io)
+        io << "Channel.Open("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ")"
+      end
     end
 
     class OpenOk < Method
@@ -526,6 +661,13 @@ module AMQP::Protocol
 
       def encode(io)
         io.write_longstr(@reserved_1)
+      end
+
+      def to_s(io)
+        io << "Channel.OpenOk("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ")"
       end
     end
 
@@ -557,6 +699,13 @@ module AMQP::Protocol
         bits = bits | (1 << 0) if @active
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Channel.Flow("
+        io << "active: "
+        active.inspect(io)
+        io << ")"
+      end
     end
 
     class FlowOk < Method
@@ -586,6 +735,13 @@ module AMQP::Protocol
         bits = 0_u8
         bits = bits | (1 << 0) if @active
         io.write_octet(bits)
+      end
+
+      def to_s(io)
+        io << "Channel.FlowOk("
+        io << "active: "
+        active.inspect(io)
+        io << ")"
       end
     end
 
@@ -623,6 +779,22 @@ module AMQP::Protocol
         io.write_short(@class_id)
         io.write_short(@method_id)
       end
+
+      def to_s(io)
+        io << "Channel.Close("
+        io << "reply_code: "
+        reply_code.inspect(io)
+        io << ", "
+        io << "reply_text: "
+        reply_text.inspect(io)
+        io << ", "
+        io << "class_id: "
+        class_id.inspect(io)
+        io << ", "
+        io << "method_id: "
+        method_id.inspect(io)
+        io << ")"
+      end
     end
 
     class CloseOk < Method
@@ -646,6 +818,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Channel.CloseOk("
+        io << ")"
       end
     end
 
@@ -702,6 +879,37 @@ module AMQP::Protocol
         io.write_octet(bits)
         io.write_table(@arguments)
       end
+
+      def to_s(io)
+        io << "Exchange.Declare("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "exchange: "
+        exchange.inspect(io)
+        io << ", "
+        io << "type: "
+        type.inspect(io)
+        io << ", "
+        io << "passive: "
+        passive.inspect(io)
+        io << ", "
+        io << "durable: "
+        durable.inspect(io)
+        io << ", "
+        io << "auto_delete: "
+        auto_delete.inspect(io)
+        io << ", "
+        io << "internal: "
+        internal.inspect(io)
+        io << ", "
+        io << "no_wait: "
+        no_wait.inspect(io)
+        io << ", "
+        io << "arguments: "
+        arguments.inspect(io)
+        io << ")"
+      end
     end
 
     class DeclareOk < Method
@@ -725,6 +933,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Exchange.DeclareOk("
+        io << ")"
       end
     end
 
@@ -764,6 +977,22 @@ module AMQP::Protocol
         bits = bits | (1 << 1) if @no_wait
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Exchange.Delete("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "exchange: "
+        exchange.inspect(io)
+        io << ", "
+        io << "if_unused: "
+        if_unused.inspect(io)
+        io << ", "
+        io << "no_wait: "
+        no_wait.inspect(io)
+        io << ")"
+      end
     end
 
     class DeleteOk < Method
@@ -787,6 +1016,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Exchange.DeleteOk("
+        io << ")"
       end
     end
 
@@ -833,6 +1067,28 @@ module AMQP::Protocol
         io.write_octet(bits)
         io.write_table(@arguments)
       end
+
+      def to_s(io)
+        io << "Exchange.Bind("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "destination: "
+        destination.inspect(io)
+        io << ", "
+        io << "source: "
+        source.inspect(io)
+        io << ", "
+        io << "routing_key: "
+        routing_key.inspect(io)
+        io << ", "
+        io << "no_wait: "
+        no_wait.inspect(io)
+        io << ", "
+        io << "arguments: "
+        arguments.inspect(io)
+        io << ")"
+      end
     end
 
     class BindOk < Method
@@ -856,6 +1112,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Exchange.BindOk("
+        io << ")"
       end
     end
 
@@ -902,6 +1163,28 @@ module AMQP::Protocol
         io.write_octet(bits)
         io.write_table(@arguments)
       end
+
+      def to_s(io)
+        io << "Exchange.Unbind("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "destination: "
+        destination.inspect(io)
+        io << ", "
+        io << "source: "
+        source.inspect(io)
+        io << ", "
+        io << "routing_key: "
+        routing_key.inspect(io)
+        io << ", "
+        io << "no_wait: "
+        no_wait.inspect(io)
+        io << ", "
+        io << "arguments: "
+        arguments.inspect(io)
+        io << ")"
+      end
     end
 
     class UnbindOk < Method
@@ -925,6 +1208,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Exchange.UnbindOk("
+        io << ")"
       end
     end
 
@@ -978,6 +1266,34 @@ module AMQP::Protocol
         io.write_octet(bits)
         io.write_table(@arguments)
       end
+
+      def to_s(io)
+        io << "Queue.Declare("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "queue: "
+        queue.inspect(io)
+        io << ", "
+        io << "passive: "
+        passive.inspect(io)
+        io << ", "
+        io << "durable: "
+        durable.inspect(io)
+        io << ", "
+        io << "exclusive: "
+        exclusive.inspect(io)
+        io << ", "
+        io << "auto_delete: "
+        auto_delete.inspect(io)
+        io << ", "
+        io << "no_wait: "
+        no_wait.inspect(io)
+        io << ", "
+        io << "arguments: "
+        arguments.inspect(io)
+        io << ")"
+      end
     end
 
     class DeclareOk < Method
@@ -1010,6 +1326,19 @@ module AMQP::Protocol
         io.write_shortstr(@queue)
         io.write_long(@message_count)
         io.write_long(@consumer_count)
+      end
+
+      def to_s(io)
+        io << "Queue.DeclareOk("
+        io << "queue: "
+        queue.inspect(io)
+        io << ", "
+        io << "message_count: "
+        message_count.inspect(io)
+        io << ", "
+        io << "consumer_count: "
+        consumer_count.inspect(io)
+        io << ")"
       end
     end
 
@@ -1056,6 +1385,28 @@ module AMQP::Protocol
         io.write_octet(bits)
         io.write_table(@arguments)
       end
+
+      def to_s(io)
+        io << "Queue.Bind("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "queue: "
+        queue.inspect(io)
+        io << ", "
+        io << "exchange: "
+        exchange.inspect(io)
+        io << ", "
+        io << "routing_key: "
+        routing_key.inspect(io)
+        io << ", "
+        io << "no_wait: "
+        no_wait.inspect(io)
+        io << ", "
+        io << "arguments: "
+        arguments.inspect(io)
+        io << ")"
+      end
     end
 
     class BindOk < Method
@@ -1079,6 +1430,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Queue.BindOk("
+        io << ")"
       end
     end
 
@@ -1119,6 +1475,25 @@ module AMQP::Protocol
         io.write_shortstr(@routing_key)
         io.write_table(@arguments)
       end
+
+      def to_s(io)
+        io << "Queue.Unbind("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "queue: "
+        queue.inspect(io)
+        io << ", "
+        io << "exchange: "
+        exchange.inspect(io)
+        io << ", "
+        io << "routing_key: "
+        routing_key.inspect(io)
+        io << ", "
+        io << "arguments: "
+        arguments.inspect(io)
+        io << ")"
+      end
     end
 
     class UnbindOk < Method
@@ -1142,6 +1517,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Queue.UnbindOk("
+        io << ")"
       end
     end
 
@@ -1179,6 +1559,19 @@ module AMQP::Protocol
         bits = bits | (1 << 0) if @no_wait
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Queue.Purge("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "queue: "
+        queue.inspect(io)
+        io << ", "
+        io << "no_wait: "
+        no_wait.inspect(io)
+        io << ")"
+      end
     end
 
     class PurgeOk < Method
@@ -1205,6 +1598,13 @@ module AMQP::Protocol
 
       def encode(io)
         io.write_long(@message_count)
+      end
+
+      def to_s(io)
+        io << "Queue.PurgeOk("
+        io << "message_count: "
+        message_count.inspect(io)
+        io << ")"
       end
     end
 
@@ -1246,6 +1646,25 @@ module AMQP::Protocol
         bits = bits | (1 << 2) if @no_wait
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Queue.Delete("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "queue: "
+        queue.inspect(io)
+        io << ", "
+        io << "if_unused: "
+        if_unused.inspect(io)
+        io << ", "
+        io << "if_empty: "
+        if_empty.inspect(io)
+        io << ", "
+        io << "no_wait: "
+        no_wait.inspect(io)
+        io << ")"
+      end
     end
 
     class DeleteOk < Method
@@ -1272,6 +1691,13 @@ module AMQP::Protocol
 
       def encode(io)
         io.write_long(@message_count)
+      end
+
+      def to_s(io)
+        io << "Queue.DeleteOk("
+        io << "message_count: "
+        message_count.inspect(io)
+        io << ")"
       end
     end
 
@@ -1314,6 +1740,19 @@ module AMQP::Protocol
         bits = bits | (1 << 0) if @global
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Basic.Qos("
+        io << "prefetch_size: "
+        prefetch_size.inspect(io)
+        io << ", "
+        io << "prefetch_count: "
+        prefetch_count.inspect(io)
+        io << ", "
+        io << "global: "
+        global.inspect(io)
+        io << ")"
+      end
     end
 
     class QosOk < Method
@@ -1337,6 +1776,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Basic.QosOk("
+        io << ")"
       end
     end
 
@@ -1386,6 +1830,34 @@ module AMQP::Protocol
         io.write_octet(bits)
         io.write_table(@arguments)
       end
+
+      def to_s(io)
+        io << "Basic.Consume("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "queue: "
+        queue.inspect(io)
+        io << ", "
+        io << "consumer_tag: "
+        consumer_tag.inspect(io)
+        io << ", "
+        io << "no_local: "
+        no_local.inspect(io)
+        io << ", "
+        io << "no_ack: "
+        no_ack.inspect(io)
+        io << ", "
+        io << "exclusive: "
+        exclusive.inspect(io)
+        io << ", "
+        io << "no_wait: "
+        no_wait.inspect(io)
+        io << ", "
+        io << "arguments: "
+        arguments.inspect(io)
+        io << ")"
+      end
     end
 
     class ConsumeOk < Method
@@ -1412,6 +1884,13 @@ module AMQP::Protocol
 
       def encode(io)
         io.write_shortstr(@consumer_tag)
+      end
+
+      def to_s(io)
+        io << "Basic.ConsumeOk("
+        io << "consumer_tag: "
+        consumer_tag.inspect(io)
+        io << ")"
       end
     end
 
@@ -1446,6 +1925,16 @@ module AMQP::Protocol
         bits = bits | (1 << 0) if @no_wait
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Basic.Cancel("
+        io << "consumer_tag: "
+        consumer_tag.inspect(io)
+        io << ", "
+        io << "no_wait: "
+        no_wait.inspect(io)
+        io << ")"
+      end
     end
 
     class CancelOk < Method
@@ -1472,6 +1961,13 @@ module AMQP::Protocol
 
       def encode(io)
         io.write_shortstr(@consumer_tag)
+      end
+
+      def to_s(io)
+        io << "Basic.CancelOk("
+        io << "consumer_tag: "
+        consumer_tag.inspect(io)
+        io << ")"
       end
     end
 
@@ -1515,6 +2011,25 @@ module AMQP::Protocol
         bits = bits | (1 << 1) if @immediate
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Basic.Publish("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "exchange: "
+        exchange.inspect(io)
+        io << ", "
+        io << "routing_key: "
+        routing_key.inspect(io)
+        io << ", "
+        io << "mandatory: "
+        mandatory.inspect(io)
+        io << ", "
+        io << "immediate: "
+        immediate.inspect(io)
+        io << ")"
+      end
     end
 
     class Return < Method
@@ -1551,6 +2066,22 @@ module AMQP::Protocol
         io.write_shortstr(@reply_text)
         io.write_shortstr(@exchange)
         io.write_shortstr(@routing_key)
+      end
+
+      def to_s(io)
+        io << "Basic.Return("
+        io << "reply_code: "
+        reply_code.inspect(io)
+        io << ", "
+        io << "reply_text: "
+        reply_text.inspect(io)
+        io << ", "
+        io << "exchange: "
+        exchange.inspect(io)
+        io << ", "
+        io << "routing_key: "
+        routing_key.inspect(io)
+        io << ")"
       end
     end
 
@@ -1595,6 +2126,25 @@ module AMQP::Protocol
         io.write_shortstr(@exchange)
         io.write_shortstr(@routing_key)
       end
+
+      def to_s(io)
+        io << "Basic.Deliver("
+        io << "consumer_tag: "
+        consumer_tag.inspect(io)
+        io << ", "
+        io << "delivery_tag: "
+        delivery_tag.inspect(io)
+        io << ", "
+        io << "redelivered: "
+        redelivered.inspect(io)
+        io << ", "
+        io << "exchange: "
+        exchange.inspect(io)
+        io << ", "
+        io << "routing_key: "
+        routing_key.inspect(io)
+        io << ")"
+      end
     end
 
     class Get < Method
@@ -1630,6 +2180,19 @@ module AMQP::Protocol
         bits = 0_u8
         bits = bits | (1 << 0) if @no_ack
         io.write_octet(bits)
+      end
+
+      def to_s(io)
+        io << "Basic.Get("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ", "
+        io << "queue: "
+        queue.inspect(io)
+        io << ", "
+        io << "no_ack: "
+        no_ack.inspect(io)
+        io << ")"
       end
     end
 
@@ -1674,6 +2237,25 @@ module AMQP::Protocol
         io.write_shortstr(@routing_key)
         io.write_long(@message_count)
       end
+
+      def to_s(io)
+        io << "Basic.GetOk("
+        io << "delivery_tag: "
+        delivery_tag.inspect(io)
+        io << ", "
+        io << "redelivered: "
+        redelivered.inspect(io)
+        io << ", "
+        io << "exchange: "
+        exchange.inspect(io)
+        io << ", "
+        io << "routing_key: "
+        routing_key.inspect(io)
+        io << ", "
+        io << "message_count: "
+        message_count.inspect(io)
+        io << ")"
+      end
     end
 
     class GetEmpty < Method
@@ -1700,6 +2282,13 @@ module AMQP::Protocol
 
       def encode(io)
         io.write_shortstr(@reserved_1)
+      end
+
+      def to_s(io)
+        io << "Basic.GetEmpty("
+        io << "reserved_1: "
+        reserved_1.inspect(io)
+        io << ")"
       end
     end
 
@@ -1734,6 +2323,16 @@ module AMQP::Protocol
         bits = bits | (1 << 0) if @multiple
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Basic.Ack("
+        io << "delivery_tag: "
+        delivery_tag.inspect(io)
+        io << ", "
+        io << "multiple: "
+        multiple.inspect(io)
+        io << ")"
+      end
     end
 
     class Reject < Method
@@ -1767,6 +2366,16 @@ module AMQP::Protocol
         bits = bits | (1 << 0) if @requeue
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Basic.Reject("
+        io << "delivery_tag: "
+        delivery_tag.inspect(io)
+        io << ", "
+        io << "requeue: "
+        requeue.inspect(io)
+        io << ")"
+      end
     end
 
     class RecoverAsync < Method
@@ -1796,6 +2405,13 @@ module AMQP::Protocol
         bits = 0_u8
         bits = bits | (1 << 0) if @requeue
         io.write_octet(bits)
+      end
+
+      def to_s(io)
+        io << "Basic.RecoverAsync("
+        io << "requeue: "
+        requeue.inspect(io)
+        io << ")"
       end
     end
 
@@ -1827,6 +2443,13 @@ module AMQP::Protocol
         bits = bits | (1 << 0) if @requeue
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Basic.Recover("
+        io << "requeue: "
+        requeue.inspect(io)
+        io << ")"
+      end
     end
 
     class RecoverOk < Method
@@ -1850,6 +2473,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Basic.RecoverOk("
+        io << ")"
       end
     end
 
@@ -1886,6 +2514,19 @@ module AMQP::Protocol
         bits = bits | (1 << 1) if @requeue
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Basic.Nack("
+        io << "delivery_tag: "
+        delivery_tag.inspect(io)
+        io << ", "
+        io << "multiple: "
+        multiple.inspect(io)
+        io << ", "
+        io << "requeue: "
+        requeue.inspect(io)
+        io << ")"
+      end
     end
 
   end
@@ -1915,6 +2556,11 @@ module AMQP::Protocol
 
       def encode(io)
       end
+
+      def to_s(io)
+        io << "Tx.Select("
+        io << ")"
+      end
     end
 
     class SelectOk < Method
@@ -1938,6 +2584,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Tx.SelectOk("
+        io << ")"
       end
     end
 
@@ -1963,6 +2614,11 @@ module AMQP::Protocol
 
       def encode(io)
       end
+
+      def to_s(io)
+        io << "Tx.Commit("
+        io << ")"
+      end
     end
 
     class CommitOk < Method
@@ -1986,6 +2642,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Tx.CommitOk("
+        io << ")"
       end
     end
 
@@ -2011,6 +2672,11 @@ module AMQP::Protocol
 
       def encode(io)
       end
+
+      def to_s(io)
+        io << "Tx.Rollback("
+        io << ")"
+      end
     end
 
     class RollbackOk < Method
@@ -2034,6 +2700,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Tx.RollbackOk("
+        io << ")"
       end
     end
 
@@ -2070,6 +2741,13 @@ module AMQP::Protocol
         bits = bits | (1 << 0) if @nowait
         io.write_octet(bits)
       end
+
+      def to_s(io)
+        io << "Confirm.Select("
+        io << "nowait: "
+        nowait.inspect(io)
+        io << ")"
+      end
     end
 
     class SelectOk < Method
@@ -2093,6 +2771,11 @@ module AMQP::Protocol
       end
 
       def encode(io)
+      end
+
+      def to_s(io)
+        io << "Confirm.SelectOk("
+        io << ")"
       end
     end
 

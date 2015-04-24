@@ -107,6 +107,10 @@ module AMQP::Protocol
       @method.encode(buf_io)
       buf.to_s.to_slice
     end
+
+    def to_s(io)
+      io << "MethodFrame: " << @method
+    end
   end
 
   class HeadersFrame < Frame
@@ -121,6 +125,10 @@ module AMQP::Protocol
     def get_payload
       raise "not implemented"
     end
+
+    def to_s(io)
+      io << "HeadersFrame"
+    end
   end
 
   class BodyFrame < Frame
@@ -134,6 +142,10 @@ module AMQP::Protocol
 
     def get_payload
       raise "not implemented"
+    end
+
+    def to_s(io)
+      io << "BodyFrame"
     end
   end
 
@@ -155,6 +167,10 @@ module AMQP::Protocol
 
     def get_payload
       Slice(UInt8).new(0)
+    end
+
+    def to_s(io)
+      io << "HeartbeatFrame"
     end
   end
 
