@@ -8,7 +8,13 @@ module AMQP::Protocol
   class Class
   end
 
-  class Method
+  abstract class Method
+    abstract def encode(io)
+
+    def call(io, channel)
+      frame = Protocol::MethodFrame.new(0_u16, self)
+      frame.encode(io)
+    end
   end
 
   struct Decimal
@@ -53,14 +59,19 @@ module AMQP::Protocol
     def encode(io)
       io.write_octet(@type)
       io.write_short(@channel)
-      write_payload(io)
+      payload = get_payload()
+      io.write_long(payload.length.to_u32)
+      io.write(payload)
       io.write_octet(FINAL_OCTET)
     end
 
     def self.decode(io)
       ty = io.read_octet
+      raise ::IO::EOFError.new unless ty
       channel = io.read_short
+      raise ::IO::EOFError.new unless channel
       size = io.read_long
+      raise ::IO::EOFError.new unless size
       frame = case ty
               when METHOD
                 MethodFrame.parse(channel, size, io)
@@ -80,68 +91,77 @@ module AMQP::Protocol
       frame
     end
 
-    abstract def write_payload(io)
+    abstract def get_payload: Slice(UInt8)
   end
 
   class MethodFrame < Frame
     getter method
 
-    def initialize(@type, @channel, @method)
+    def initialize(@channel, @method)
+      @type = METHOD
     end
 
     def self.parse(channel, size, io)
       cls_id = io.read_short
       meth_id = io.read_short
       method = Method.parse_method(cls_id, meth_id, io)
-      MethodFrame.new(METHOD, channel, method)
+      MethodFrame.new(channel, method)
     end
 
-    def write_payload(io)
+    def get_payload
       buf = StringIO.new
       buf_io = IO.new(buf)
+      @method.id.each {|v| buf_io.write_short(v)}
       @method.encode(buf_io)
-      payload = buf.to_s
-      io.write_long(payload.bytesize)
-      io.write(payload.to_slice)
+      buf.to_s.to_slice
     end
   end
 
   class HeadersFrame < Frame
-    def initialize(@type, @channel)
+    def initialize(@channel)
+      @type = HEADERS
     end
 
     def self.parse(channel, size, io)
       raise "not implemented"
     end
 
-    def write_payload(io)
+    def get_payload
       raise "not implemented"
     end
   end
 
   class BodyFrame < Frame
-    def initialize(@type, @channel)
+    def initialize(@channel)
+      @type = BODY
     end
 
     def self.parse(channel, size, io)
       raise "not implemented"
     end
 
-    def write_payload(io)
+    def get_payload
       raise "not implemented"
     end
   end
 
   class HeartbeatFrame < Frame
-    def initialize(@type, @channel)
+    def initialize(@channel)
+      @type = HEARTBEAT
     end
 
     def self.parse(channel, size, io)
-      raise "not implemented"
+      unless channel == 0
+        raise FrameError.new("Heartbeat frame must have a channel number of zero")
+      end
+      unless size == 0
+        raise FrameError.new("Heartbeat frame must have an empty payload")
+      end
+      HeartbeatFrame.new(channel)
     end
 
-    def write_payload(io)
-      raise "not implemented"
+    def get_payload
+      Slice(UInt8).new(0)
     end
   end
 
@@ -357,18 +377,23 @@ module AMQP::Protocol
        @io.print(v)
      end
 
-     def write_table(table: Hash(String, Object))
-       io = IO.new(StringIO.new)
+     def write_table(table: Table)
+       buf = StringIO.new
+       io = IO.new(buf)
        table.each do |key, value|
          io.write_shortstr(key)
          io.write_field(value)
        end
+       write_longstr(buf.to_s)
      end
 
      protected def write_field(field)
       case field
-      when UInt8
+      when Bool
         write_octet('t')
+        write_octet(field ? 1_u8 : 0_u8)
+      when UInt8
+        write_octet('b')
         write(field)
       when UInt16
         write_octet('s')
@@ -390,17 +415,19 @@ module AMQP::Protocol
       when Array(UInt8)
         write_octet('x')
         write(field.length.to_i32)
-        @io.write(Slice.new(array.buffer, array.length))
+        @io.write(Slice.new(field.buffer, field.length))
       when Array
         write_octet('A')
         write(field.length.to_i32)
         field.each {|v| write_field(v)}
       when Time
         write_octet('T')
-        write(field.to_i.to_int64)
+        write(field.to_i.to_i64)
       when Hash
         write_octet('F')
         write_table(field)
+      else
+        raise FrameError.new("invalid type #{typeof(field)}")
       end
     end
 

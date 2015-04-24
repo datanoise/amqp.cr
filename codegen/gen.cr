@@ -87,7 +87,7 @@ module CodeGen
     def generate(io, indent = 0)
       iputs "class #{@name} < Class"
       do_indent do
-        iputs "INDEX = #{@index}"
+        iputs "INDEX = #{@index}_u16"
         io.puts
         @methods.each do |m|
           m.generate(io, indent)
@@ -116,7 +116,7 @@ module CodeGen
     def generate(io, indent)
       iputs "class #{@name} < Method"
       do_indent do
-        iputs "INDEX = #{@index}"
+        iputs "INDEX = #{@index}_u16"
           if @has_content
             iputs "CONTENT = true"
           end
@@ -132,7 +132,7 @@ module CodeGen
         # id method
         iputs "def id"
         do_indent do
-          iputs "[#{@cls.index}, #{@index}]"
+          iputs "[#{@cls.index}_u16, #{@index}_u16]"
         end
         iputs "end"
         io.puts
@@ -152,7 +152,7 @@ module CodeGen
           @fields.each do |f|
             if bit == -1 && f.bit?
               iputs "bits = io.read_octet"
-              iputs "raise FrameError.new unless bits"
+              iputs "raise ::IO::EOFError.new unless bits"
               bit = 0
             elsif bit > -1 && f.bit?
               bit += 1
@@ -210,6 +210,7 @@ module CodeGen
         iputs "#{@name} = bits & (1 << #{bit})"
       else
         iputs "#{@name} = io.read_#{@domain.type}"
+        iputs "raise ::IO::EOFError.new unless #{name}"
       end
     end
 
