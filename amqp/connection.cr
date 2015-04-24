@@ -1,8 +1,6 @@
 require "socket"
-require "./protocol"
-require "./spec091"
+require "./engine"
 require "./auth"
-require "./timed_channel"
 
 module AMQP
   class Config
@@ -32,25 +30,39 @@ module AMQP
   end
 
   class Connection
-    ProtocolHeader = ['A'.ord, 'M'.ord, 'Q'.ord, 'P'.ord, 0, 0, 9, 1].map(&.to_u8)
     DefaultProduct = "http://github.com/datanoise/amqp.cr"
     DefaultVersion = "0.1"
 
-    getter closed
+    getter config
 
     def initialize(@config = Config.new)
-      @socket = TCPSocket.new(@config.host, @config.port)
-      @io = Protocol::IO.new(@socket)
-      @rpc = Channel(Protocol::Method).new
-      @sends = BufferedChannel(Time).new
-      @closed = false
+      @engine = Engine.new(@config)
+      @channel_id = 0_u16
     end
 
-    def open
-      write_protocol_header
-      spawn { process_frames }
+    def self.start(config = Config.new)
+      conn = Connection.new(config)
+      conn.handshake
+      yield conn
+      loop do
+        break if conn.closed
+        sleep 1
+      end
+    end
 
-      start = @rpc.receive
+    def close
+      @engine.close
+    end
+
+    def closed
+      @engine.closed
+    end
+
+    protected def handshake
+      @engine.write_protocol_header
+      @engine.start_reader
+
+      start = @engine.receive
       unless start.is_a?(Protocol::Connection::Start)
         raise Protocol::FrameError.new("Unexpected method #{start.id}")
       end
@@ -64,12 +76,13 @@ module AMQP
       capabilities = client_properties["capabilities"] = Protocol::Table.new
       capabilities["connection.blocked"] = true
       capabilities["consumer_cancel_notify"] = true
-      auth = get_authenticator(start)
+      auth = Auth.get_authenticator(start.mechanisms)
+
       start_ok = Protocol::Connection::StartOk.new(
         client_properties, "PLAIN", auth.response(@config.username, @config.password), "")
-      start_ok.call(@io, 0_u16)
+      @engine.send(@channel_id, start_ok)
 
-      tune = @rpc.receive
+      tune = @engine.receive
       unless tune.is_a?(Protocol::Connection::Tune)
         raise Protocol::FrameError.new("Unexpected method #{tune.id}")
       end
@@ -87,90 +100,16 @@ module AMQP
 
       tune_ok = Protocol::Connection::TuneOk.new(
         @config.channel_max, @config.frame_max, @config.heartbeat.total_seconds.to_u16)
-      tune_ok.call(@io, 0_u16)
+      @engine.send(@channel_id, tune_ok)
 
-      spawn { run_heartbeater }
+      @engine.start_heartbeater
 
       open = Protocol::Connection::Open.new(@config.vhost, "", false)
-      open.call(@io, 0_u16)
-      open_ok = @rpc.receive
+      @engine.send(@channel_id, open)
+      open_ok = @engine.receive
       unless open_ok.is_a?(Protocol::Connection::OpenOk)
         raise Protocol::FrameError.new("Unexpected method #{open_ok.id}")
       end
     end
-
-    def self.start(config = Config.new)
-      conn = Connection.new(config)
-      conn.open
-      yield conn
-      loop do
-        break if conn.closed
-        sleep 1
-      end
-    end
-
-    def close
-      @closed = true
-      @socket.close
-    end
-
-    private def get_authenticator(method)
-      mechanisms = method.mechanisms
-      unless mechanisms
-        raise Protocol::FrameError.new("Server returned empty list of auth mechanisms")
-      end
-      mechanisms = mechanisms.split(' ')
-      auth = nil
-      mechanisms.each do |mech|
-        auth = Authenticators[mech]?
-        break if auth
-      end
-      unless auth
-        raise Protocol::NotImplemented.new("Unable to use any of these auth methods #{method.mechanisms}")
-      end
-      auth
-    end
-
-    private def on_heartbeat
-      puts "HeartBeat"
-    end
-
-    private def write_protocol_header
-      @io.write(Slice.new(ProtocolHeader.buffer, ProtocolHeader.length))
-    end
-
-    private def process_frames
-      loop do
-        frame = Protocol::Frame.decode(@io)
-
-        case frame
-        when Protocol::MethodFrame
-          @rpc.send(frame.method)
-
-        when Protocol::HeadersFrame
-
-        when Protocol::BodyFrame
-
-        when Protocol::HeartbeatFrame
-          on_heartbeat
-        end
-      end
-    rescue ex
-      puts ex
-      puts ex.backtrace.join("\n")
-      close
-    end
-
-    private def run_heartbeater
-      loop do
-        now = Time.now
-
-      end
-    end
   end
 end
-
-AMQP::Connection.start do |conn|
-
-end
-

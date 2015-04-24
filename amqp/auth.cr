@@ -6,6 +6,22 @@ module AMQP
     end
 
     abstract def response(username, password): String
+
+    def self.get_authenticator(mechanisms)
+      unless mechanisms
+        raise Protocol::FrameError.new("List of auth mechanisms is empty")
+      end
+      mechanisms = mechanisms.split(' ')
+      auth = nil
+      mechanisms.each do |mech|
+        auth = Authenticators[mech]?
+        break if auth
+      end
+      unless auth
+        raise Protocol::NotImplemented.new("Unable to use any of these auth methods #{mechanisms}")
+      end
+      auth
+    end
   end
 
   class PlainAuth < Auth

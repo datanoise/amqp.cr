@@ -1,80 +1,104 @@
 module AMQP::Protocol
   FRAME_METHOD = 1
+
   FRAME_HEADER = 2
+
   FRAME_BODY = 3
+
   FRAME_HEARTBEAT = 8
+
   FRAME_MIN_SIZE = 4096
+
   FRAME_END = 206
+
   REPLY_SUCCESS = 200
+
   class ContentTooLarge < SoftError
     VALUE = 311
   end
+
 
   class NoConsumers < SoftError
     VALUE = 313
   end
 
+
   class ConnectionForced < HardError
     VALUE = 320
   end
+
 
   class InvalidPath < HardError
     VALUE = 402
   end
 
+
   class AccessRefused < SoftError
     VALUE = 403
   end
+
 
   class NotFound < SoftError
     VALUE = 404
   end
 
+
   class ResourceLocked < SoftError
     VALUE = 405
   end
+
 
   class PreconditionFailed < SoftError
     VALUE = 406
   end
 
+
   class FrameError < HardError
     VALUE = 501
   end
+
 
   class SyntaxError < HardError
     VALUE = 502
   end
 
+
   class CommandInvalid < HardError
     VALUE = 503
   end
+
 
   class ChannelError < HardError
     VALUE = 504
   end
 
+
   class UnexpectedFrame < HardError
     VALUE = 505
   end
+
 
   class ResourceError < HardError
     VALUE = 506
   end
 
+
   class NotAllowed < HardError
     VALUE = 530
   end
+
 
   class NotImplemented < HardError
     VALUE = 540
   end
 
+
   class InternalError < HardError
     VALUE = 541
   end
 
-  class Connection < Class
+
+  module Connection
     INDEX = 10_u16
 
     class Start < Method
@@ -89,7 +113,7 @@ module AMQP::Protocol
         [10_u16, 10_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -128,7 +152,7 @@ module AMQP::Protocol
         [10_u16, 11_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -164,7 +188,7 @@ module AMQP::Protocol
         [10_u16, 20_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -191,7 +215,7 @@ module AMQP::Protocol
         [10_u16, 21_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -218,7 +242,7 @@ module AMQP::Protocol
         [10_u16, 30_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -251,7 +275,7 @@ module AMQP::Protocol
         [10_u16, 31_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -284,7 +308,7 @@ module AMQP::Protocol
         [10_u16, 40_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -320,7 +344,7 @@ module AMQP::Protocol
         [10_u16, 41_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -347,7 +371,7 @@ module AMQP::Protocol
         [10_u16, 50_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -383,7 +407,7 @@ module AMQP::Protocol
         [10_u16, 51_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -407,7 +431,7 @@ module AMQP::Protocol
         [10_u16, 60_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -434,7 +458,7 @@ module AMQP::Protocol
         [10_u16, 61_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -447,7 +471,8 @@ module AMQP::Protocol
     end
 
   end
-  class Channel < Class
+
+  module Channel
     INDEX = 20_u16
 
     class Open < Method
@@ -462,7 +487,7 @@ module AMQP::Protocol
         [20_u16, 10_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -489,7 +514,7 @@ module AMQP::Protocol
         [20_u16, 11_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -516,7 +541,7 @@ module AMQP::Protocol
         [20_u16, 20_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -546,7 +571,7 @@ module AMQP::Protocol
         [20_u16, 21_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -576,7 +601,7 @@ module AMQP::Protocol
         [20_u16, 40_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -612,7 +637,7 @@ module AMQP::Protocol
         [20_u16, 41_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -625,7 +650,8 @@ module AMQP::Protocol
     end
 
   end
-  class Exchange < Class
+
+  module Exchange
     INDEX = 40_u16
 
     class Declare < Method
@@ -640,7 +666,7 @@ module AMQP::Protocol
         [40_u16, 10_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -690,7 +716,7 @@ module AMQP::Protocol
         [40_u16, 11_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -714,7 +740,7 @@ module AMQP::Protocol
         [40_u16, 20_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -752,7 +778,7 @@ module AMQP::Protocol
         [40_u16, 21_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -776,7 +802,7 @@ module AMQP::Protocol
         [40_u16, 30_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -821,7 +847,7 @@ module AMQP::Protocol
         [40_u16, 31_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -845,7 +871,7 @@ module AMQP::Protocol
         [40_u16, 40_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -890,7 +916,7 @@ module AMQP::Protocol
         [40_u16, 51_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -903,7 +929,8 @@ module AMQP::Protocol
     end
 
   end
-  class Queue < Class
+
+  module Queue
     INDEX = 50_u16
 
     class Declare < Method
@@ -918,7 +945,7 @@ module AMQP::Protocol
         [50_u16, 10_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -965,7 +992,7 @@ module AMQP::Protocol
         [50_u16, 11_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -998,7 +1025,7 @@ module AMQP::Protocol
         [50_u16, 20_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1043,7 +1070,7 @@ module AMQP::Protocol
         [50_u16, 21_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1067,7 +1094,7 @@ module AMQP::Protocol
         [50_u16, 50_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1106,7 +1133,7 @@ module AMQP::Protocol
         [50_u16, 51_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1130,7 +1157,7 @@ module AMQP::Protocol
         [50_u16, 30_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1166,7 +1193,7 @@ module AMQP::Protocol
         [50_u16, 31_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1193,7 +1220,7 @@ module AMQP::Protocol
         [50_u16, 40_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1233,7 +1260,7 @@ module AMQP::Protocol
         [50_u16, 41_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1249,7 +1276,8 @@ module AMQP::Protocol
     end
 
   end
-  class Basic < Class
+
+  module Basic
     INDEX = 60_u16
 
     class Qos < Method
@@ -1264,7 +1292,7 @@ module AMQP::Protocol
         [60_u16, 10_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1300,7 +1328,7 @@ module AMQP::Protocol
         [60_u16, 11_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1324,7 +1352,7 @@ module AMQP::Protocol
         [60_u16, 20_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1372,7 +1400,7 @@ module AMQP::Protocol
         [60_u16, 21_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1399,7 +1427,7 @@ module AMQP::Protocol
         [60_u16, 30_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1432,7 +1460,7 @@ module AMQP::Protocol
         [60_u16, 31_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1460,7 +1488,7 @@ module AMQP::Protocol
         [60_u16, 40_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -1502,7 +1530,7 @@ module AMQP::Protocol
         [60_u16, 50_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -1539,7 +1567,7 @@ module AMQP::Protocol
         [60_u16, 60_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -1581,7 +1609,7 @@ module AMQP::Protocol
         [60_u16, 70_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1618,7 +1646,7 @@ module AMQP::Protocol
         [60_u16, 71_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1660,7 +1688,7 @@ module AMQP::Protocol
         [60_u16, 72_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1687,7 +1715,7 @@ module AMQP::Protocol
         [60_u16, 80_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -1720,7 +1748,7 @@ module AMQP::Protocol
         [60_u16, 90_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -1753,7 +1781,7 @@ module AMQP::Protocol
         [60_u16, 100_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -1783,7 +1811,7 @@ module AMQP::Protocol
         [60_u16, 110_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -1813,7 +1841,7 @@ module AMQP::Protocol
         [60_u16, 111_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1837,7 +1865,7 @@ module AMQP::Protocol
         [60_u16, 120_u16]
       end
 
-      def wait?
+      def sync?
         false
       end
 
@@ -1861,7 +1889,8 @@ module AMQP::Protocol
     end
 
   end
-  class Tx < Class
+
+  module Tx
     INDEX = 90_u16
 
     class Select < Method
@@ -1876,7 +1905,7 @@ module AMQP::Protocol
         [90_u16, 10_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1900,7 +1929,7 @@ module AMQP::Protocol
         [90_u16, 11_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1924,7 +1953,7 @@ module AMQP::Protocol
         [90_u16, 20_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1948,7 +1977,7 @@ module AMQP::Protocol
         [90_u16, 21_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1972,7 +2001,7 @@ module AMQP::Protocol
         [90_u16, 30_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -1996,7 +2025,7 @@ module AMQP::Protocol
         [90_u16, 31_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -2009,7 +2038,8 @@ module AMQP::Protocol
     end
 
   end
-  class Confirm < Class
+
+  module Confirm
     INDEX = 85_u16
 
     class Select < Method
@@ -2024,7 +2054,7 @@ module AMQP::Protocol
         [85_u16, 10_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -2054,7 +2084,7 @@ module AMQP::Protocol
         [85_u16, 11_u16]
       end
 
-      def wait?
+      def sync?
         true
       end
 
@@ -2067,6 +2097,7 @@ module AMQP::Protocol
     end
 
   end
+
 
   class Method
     def self.parse_method(cls_id, meth_id, io)

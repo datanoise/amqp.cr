@@ -5,16 +5,8 @@ module AMQP::Protocol
   class HardError < Exception
   end
 
-  class Class
-  end
-
   abstract class Method
     abstract def encode(io)
-
-    def call(io, channel)
-      frame = Protocol::MethodFrame.new(0_u16, self)
-      frame.encode(io)
-    end
   end
 
   struct Decimal
@@ -146,7 +138,8 @@ module AMQP::Protocol
   end
 
   class HeartbeatFrame < Frame
-    def initialize(@channel)
+    def initialize()
+      @channel = 0_u16
       @type = HEARTBEAT
     end
 
@@ -157,7 +150,7 @@ module AMQP::Protocol
       unless size == 0
         raise FrameError.new("Heartbeat frame must have an empty payload")
       end
-      HeartbeatFrame.new(channel)
+      HeartbeatFrame.new
     end
 
     def get_payload
@@ -388,50 +381,50 @@ module AMQP::Protocol
      end
 
      protected def write_field(field)
-      case field
-      when Bool
-        write_octet('t')
-        write_octet(field ? 1_u8 : 0_u8)
-      when UInt8
-        write_octet('b')
-        write(field)
-      when UInt16
-        write_octet('s')
-        write(field)
-      when UInt32
-        write_octet('I')
-        write(field)
-      when UInt64
-        write_octet('l')
-        write(field)
-      when Float32
-        write_octet('f')
-        write(field)
-      when Float64
-        write_octet('d')
-      when String
-        write_octet('S')
-        write_longstr(field)
-      when Array(UInt8)
-        write_octet('x')
-        write(field.length.to_i32)
-        @io.write(Slice.new(field.buffer, field.length))
-      when Array
-        write_octet('A')
-        write(field.length.to_i32)
-        field.each {|v| write_field(v)}
-      when Time
-        write_octet('T')
-        write(field.to_i.to_i64)
-      when Hash
-        write_octet('F')
-        write_table(field)
-      else
-        raise FrameError.new("invalid type #{typeof(field)}")
-      end
+       case field
+       when Bool
+         write_octet('t')
+         write_octet(field ? 1_u8 : 0_u8)
+       when UInt8
+         write_octet('b')
+         write(field)
+       when UInt16
+         write_octet('s')
+         write(field)
+       when UInt32
+         write_octet('I')
+         write(field)
+       when UInt64
+         write_octet('l')
+         write(field)
+       when Float32
+         write_octet('f')
+         write(field)
+       when Float64
+         write_octet('d')
+       when String
+         write_octet('S')
+         write_longstr(field)
+       when Array(UInt8)
+         write_octet('x')
+         write(field.length.to_i32)
+         @io.write(Slice.new(field.buffer, field.length))
+       when Array
+         write_octet('A')
+         write(field.length.to_i32)
+         field.each {|v| write_field(v)}
+       when Time
+         write_octet('T')
+         write(field.to_i.to_i64)
+       when Hash
+         write_octet('F')
+         write_table(field)
+       else
+         raise FrameError.new("invalid type #{typeof(field)}")
+       end
     end
 
-     protected def read_array
+    protected def read_array
       len = read_uint32
       return nil unless len
       slice = Slice(UInt8).new(len.to_i32)
@@ -448,7 +441,7 @@ module AMQP::Protocol
       array
     end
 
-     protected def read_decimal
+    protected def read_decimal
       scale = read_octet
       return nil unless scale
       value = read_int32
@@ -456,7 +449,7 @@ module AMQP::Protocol
       Decimal.new(scale, value)
     end
 
-     protected def read_timestamp
+    protected def read_timestamp
       tv_sec = read_int64
       return nil unless tv_sec
       spec = LibC::TimeSpec.new
@@ -464,7 +457,7 @@ module AMQP::Protocol
       Time.new(spec)
     end
 
-     protected def read_byte_array
+    protected def read_byte_array
       len = read_int32
       return nil unless len
       array = Array(UInt8).new(len) { 0_u8 }

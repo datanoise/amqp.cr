@@ -85,7 +85,7 @@ module CodeGen
     end
 
     def generate(io, indent = 0)
-      iputs "class #{@name} < Class"
+      iputs "module #{@name}"
       do_indent do
         iputs "INDEX = #{@index}_u16"
         io.puts
@@ -106,7 +106,7 @@ module CodeGen
       @name = @node["name"].not_nil!.classify
       @index = @node["index"].not_nil!.to_u32
       @has_content = @node["content"]? == "1"
-      @wait = @node["synchronous"]? == "1"
+      @sync = @node["synchronous"]? == "1"
       fnodes = @node.xpath("field") as XML::NodeSet
       @fields = fnodes.map do |fnode|
         Field.new(fnode)
@@ -138,9 +138,9 @@ module CodeGen
         io.puts
 
         # wait? method
-        iputs "def wait?"
+        iputs "def sync?"
         do_indent do
-          iputs @wait ? "true" : "false"
+          iputs @sync ? "true" : "false"
         end
         iputs "end"
         io.puts
@@ -246,8 +246,8 @@ module CodeGen
     indent = 0
     iputs "module AMQP::Protocol"
     do_indent do
-      constants.each {|c| c.generate(io, indent)}
-      classes.each {|c| c.generate(io, indent)}
+      constants.each {|c| c.generate(io, indent); io.puts }
+      classes.each {|c| c.generate(io, indent); io.puts }
       io.puts
       iputs "class Method"
       do_indent do
