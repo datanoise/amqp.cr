@@ -262,7 +262,6 @@ module CodeGen
     do_indent do
       constants.each {|c| c.generate(io, indent); io.puts }
       classes.each {|c| c.generate(io, indent); io.puts }
-      io.puts
       iputs "class Method"
       do_indent do
         iputs "def self.parse_method(cls_id, meth_id, io)"
