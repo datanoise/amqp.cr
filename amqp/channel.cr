@@ -13,7 +13,7 @@ class AMQP::Channel
   alias Methods = Protocol::Channel
   getter closed
 
-  def initialize(@engine)
+  def initialize(@broker)
     @channel = Channel.next_channel
     @msgs = ::Channel(Protocol::Method).new
     @rpc = ::Channel(Protocol::Method).new
@@ -22,7 +22,7 @@ class AMQP::Channel
 
     register_consumer
     open = Methods::Open.new("")
-    @engine.send(@channel, open)
+    @broker.send(@channel, open)
     open_ok = @rpc.receive
     unless open_ok.is_a?(Methods::OpenOk)
       raise Protocol::FrameError.new("Unexpected method received: #{open_ok}")
@@ -40,7 +40,7 @@ class AMQP::Channel
 
   def flow(active)
     flow = Methods::Flow.new(active)
-    @engine.send(@channel, flow)
+    @broker.send(@channel, flow)
     flow_ok = @rpc.receive
     unless flow_ok.is_a?(Methods::FlowOk)
       raise Protocol::FrameError.new("Unexpected method received: #{flow_ok}")
@@ -49,7 +49,7 @@ class AMQP::Channel
   end
 
   def close(code = Protocol::REPLY_SUCCESS, msg = "bye", cls_id = 0, mth_id = 0)
-    @engine.send(@channel, Methods::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16))
+    @broker.send(@channel, Methods::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16))
     close_ok = @rpc.receive
   end
 
@@ -57,21 +57,21 @@ class AMQP::Channel
     return if @closed
     @closed = true
 
-    @engine.unregister_consumer(@channel)
+    @broker.unregister_consumer(@channel)
   end
 
   private def register_consumer
-    @engine.register_consumer(@channel) do |frame|
+    @broker.register_consumer(@channel) do |frame|
       case frame
       when Protocol::MethodFrame
         method = frame.method
         case method
         when Methods::Flow
-          @engine.send(@channel, Methods::FlowOk.new(method.active))
+          @broker.send(@channel, Methods::FlowOk.new(method.active))
           @flows.each {|block| block.call method.active}
         when Methods::Close
           puts "Received channel close, #{method}"
-          @engine.send(@channel, Methods::CloseOk.new)
+          @broker.send(@channel, Methods::CloseOk.new)
           close_internal
         else
           @rpc.send(method)

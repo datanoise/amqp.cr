@@ -2,7 +2,7 @@ require "./protocol"
 require "./spec091"
 require "./timed_channel"
 
-class AMQP::Engine
+class AMQP::Broker
   ProtocolHeader = ['A'.ord, 'M'.ord, 'Q'.ord, 'P'.ord, 0, 0, 9, 1].map(&.to_u8)
 
   getter closed

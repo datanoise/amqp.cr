@@ -1,5 +1,5 @@
 require "socket"
-require "./engine"
+require "./broker"
 require "./auth"
 
 module AMQP
@@ -35,7 +35,7 @@ module AMQP
 
     def initialize(@config = Config.new)
       @rpc = ::Channel(Protocol::Method).new
-      @engine = Engine.new(@config)
+      @broker = Broker.new(@config)
     end
 
     def self.start(config = Config.new)
@@ -54,28 +54,28 @@ module AMQP
 
     def close(code, msg, cls_id = 0, mth_id = 0)
       close_mth = Methods::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16)
-      @engine.send(ConnectionChannelID, close_mth)
+      @broker.send(ConnectionChannelID, close_mth)
       close_ok = @rpc.receive
-      @engine.close
+      @broker.close
     end
 
     def closed
-      @engine.closed
+      @broker.closed
     end
 
     def channel
-      Channel.new(@engine)
+      Channel.new(@broker)
     end
 
     private def register_consumer
-      @engine.register_consumer(ConnectionChannelID) do |frame|
+      @broker.register_consumer(ConnectionChannelID) do |frame|
         case frame
         when Protocol::MethodFrame
           case frame.method
           when Methods::Close
             close_ok = Methods::CloseOk.new
-            @engine.send(frame.channel, close_ok)
-            @engine.close
+            @broker.send(frame.channel, close_ok)
+            @broker.close
           else
             @rpc.send(frame.method)
           end
@@ -86,8 +86,8 @@ module AMQP
     end
 
     protected def handshake
-      @engine.write_protocol_header
-      @engine.start_reader
+      @broker.write_protocol_header
+      @broker.start_reader
       register_consumer
 
       start = @rpc.receive
@@ -108,7 +108,7 @@ module AMQP
 
       start_ok = Methods::StartOk.new(
         client_properties, "PLAIN", auth.response(@config.username, @config.password), "")
-      @engine.send(ConnectionChannelID, start_ok)
+      @broker.send(ConnectionChannelID, start_ok)
 
       tune = @rpc.receive
       unless tune.is_a?(Methods::Tune)
@@ -128,12 +128,12 @@ module AMQP
 
       tune_ok = Methods::TuneOk.new(
         @config.channel_max, @config.frame_max, @config.heartbeat.total_seconds.to_u16)
-      @engine.send(ConnectionChannelID, tune_ok)
+      @broker.send(ConnectionChannelID, tune_ok)
 
-      @engine.start_heartbeater
+      @broker.start_heartbeater
 
       open = Methods::Open.new(@config.vhost, "", false)
-      @engine.send(ConnectionChannelID, open)
+      @broker.send(ConnectionChannelID, open)
       open_ok = @rpc.receive
       unless open_ok.is_a?(Methods::OpenOk)
         raise Protocol::FrameError.new("Unexpected method #{open_ok.id}")
