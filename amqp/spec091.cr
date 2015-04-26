@@ -394,7 +394,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless reserved_1
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        reserved_2 = bits & (1 << 0)
+        reserved_2 = bits & (1 << 0) == 1
         Open.new(virtual_host, reserved_1, reserved_2)
       end
 
@@ -690,7 +690,7 @@ module AMQP::Protocol
       def self.decode(io)
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        active = bits & (1 << 0)
+        active = bits & (1 << 0) == 1
         Flow.new(active)
       end
 
@@ -727,7 +727,7 @@ module AMQP::Protocol
       def self.decode(io)
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        active = bits & (1 << 0)
+        active = bits & (1 << 0) == 1
         FlowOk.new(active)
       end
 
@@ -856,11 +856,11 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless type
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        passive = bits & (1 << 0)
-        durable = bits & (1 << 1)
-        auto_delete = bits & (1 << 2)
-        internal = bits & (1 << 3)
-        no_wait = bits & (1 << 4)
+        passive = bits & (1 << 0) == 1
+        durable = bits & (1 << 1) == 1
+        auto_delete = bits & (1 << 2) == 1
+        internal = bits & (1 << 3) == 1
+        no_wait = bits & (1 << 4) == 1
         arguments = io.read_table
         raise ::IO::EOFError.new unless arguments
         Declare.new(reserved_1, exchange, type, passive, durable, auto_delete, internal, no_wait, arguments)
@@ -964,8 +964,8 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless exchange
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        if_unused = bits & (1 << 0)
-        no_wait = bits & (1 << 1)
+        if_unused = bits & (1 << 0) == 1
+        no_wait = bits & (1 << 1) == 1
         Delete.new(reserved_1, exchange, if_unused, no_wait)
       end
 
@@ -1051,7 +1051,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless routing_key
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        no_wait = bits & (1 << 0)
+        no_wait = bits & (1 << 0) == 1
         arguments = io.read_table
         raise ::IO::EOFError.new unless arguments
         Bind.new(reserved_1, destination, source, routing_key, no_wait, arguments)
@@ -1147,7 +1147,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless routing_key
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        no_wait = bits & (1 << 0)
+        no_wait = bits & (1 << 0) == 1
         arguments = io.read_table
         raise ::IO::EOFError.new unless arguments
         Unbind.new(reserved_1, destination, source, routing_key, no_wait, arguments)
@@ -1244,11 +1244,11 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless queue
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        passive = bits & (1 << 0)
-        durable = bits & (1 << 1)
-        exclusive = bits & (1 << 2)
-        auto_delete = bits & (1 << 3)
-        no_wait = bits & (1 << 4)
+        passive = bits & (1 << 0) == 1
+        durable = bits & (1 << 1) == 1
+        exclusive = bits & (1 << 2) == 1
+        auto_delete = bits & (1 << 3) == 1
+        no_wait = bits & (1 << 4) == 1
         arguments = io.read_table
         raise ::IO::EOFError.new unless arguments
         Declare.new(reserved_1, queue, passive, durable, exclusive, auto_delete, no_wait, arguments)
@@ -1369,7 +1369,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless routing_key
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        no_wait = bits & (1 << 0)
+        no_wait = bits & (1 << 0) == 1
         arguments = io.read_table
         raise ::IO::EOFError.new unless arguments
         Bind.new(reserved_1, queue, exchange, routing_key, no_wait, arguments)
@@ -1548,7 +1548,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless queue
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        no_wait = bits & (1 << 0)
+        no_wait = bits & (1 << 0) == 1
         Purge.new(reserved_1, queue, no_wait)
       end
 
@@ -1631,9 +1631,9 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless queue
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        if_unused = bits & (1 << 0)
-        if_empty = bits & (1 << 1)
-        no_wait = bits & (1 << 2)
+        if_unused = bits & (1 << 0) == 1
+        if_empty = bits & (1 << 1) == 1
+        no_wait = bits & (1 << 2) == 1
         Delete.new(reserved_1, queue, if_unused, if_empty, no_wait)
       end
 
@@ -1729,7 +1729,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless prefetch_count
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        global = bits & (1 << 0)
+        global = bits & (1 << 0) == 1
         Qos.new(prefetch_size, prefetch_count, global)
       end
 
@@ -1809,10 +1809,10 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless consumer_tag
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        no_local = bits & (1 << 0)
-        no_ack = bits & (1 << 1)
-        exclusive = bits & (1 << 2)
-        no_wait = bits & (1 << 3)
+        no_local = bits & (1 << 0) == 1
+        no_ack = bits & (1 << 1) == 1
+        exclusive = bits & (1 << 2) == 1
+        no_wait = bits & (1 << 3) == 1
         arguments = io.read_table
         raise ::IO::EOFError.new unless arguments
         Consume.new(reserved_1, queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments)
@@ -1915,7 +1915,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless consumer_tag
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        no_wait = bits & (1 << 0)
+        no_wait = bits & (1 << 0) == 1
         Cancel.new(consumer_tag, no_wait)
       end
 
@@ -1997,8 +1997,8 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless routing_key
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        mandatory = bits & (1 << 0)
-        immediate = bits & (1 << 1)
+        mandatory = bits & (1 << 0) == 1
+        immediate = bits & (1 << 1) == 1
         Publish.new(reserved_1, exchange, routing_key, mandatory, immediate)
       end
 
@@ -2109,7 +2109,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless delivery_tag
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        redelivered = bits & (1 << 0)
+        redelivered = bits & (1 << 0) == 1
         exchange = io.read_shortstr
         raise ::IO::EOFError.new unless exchange
         routing_key = io.read_shortstr
@@ -2170,7 +2170,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless queue
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        no_ack = bits & (1 << 0)
+        no_ack = bits & (1 << 0) == 1
         Get.new(reserved_1, queue, no_ack)
       end
 
@@ -2218,7 +2218,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless delivery_tag
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        redelivered = bits & (1 << 0)
+        redelivered = bits & (1 << 0) == 1
         exchange = io.read_shortstr
         raise ::IO::EOFError.new unless exchange
         routing_key = io.read_shortstr
@@ -2313,7 +2313,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless delivery_tag
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        multiple = bits & (1 << 0)
+        multiple = bits & (1 << 0) == 1
         Ack.new(delivery_tag, multiple)
       end
 
@@ -2356,7 +2356,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless delivery_tag
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        requeue = bits & (1 << 0)
+        requeue = bits & (1 << 0) == 1
         Reject.new(delivery_tag, requeue)
       end
 
@@ -2397,7 +2397,7 @@ module AMQP::Protocol
       def self.decode(io)
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        requeue = bits & (1 << 0)
+        requeue = bits & (1 << 0) == 1
         RecoverAsync.new(requeue)
       end
 
@@ -2434,7 +2434,7 @@ module AMQP::Protocol
       def self.decode(io)
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        requeue = bits & (1 << 0)
+        requeue = bits & (1 << 0) == 1
         Recover.new(requeue)
       end
 
@@ -2502,8 +2502,8 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless delivery_tag
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        multiple = bits & (1 << 0)
-        requeue = bits & (1 << 1)
+        multiple = bits & (1 << 0) == 1
+        requeue = bits & (1 << 1) == 1
         Nack.new(delivery_tag, multiple, requeue)
       end
 
@@ -2732,7 +2732,7 @@ module AMQP::Protocol
       def self.decode(io)
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
-        nowait = bits & (1 << 0)
+        nowait = bits & (1 << 0) == 1
         Select.new(nowait)
       end
 
@@ -2780,7 +2780,6 @@ module AMQP::Protocol
     end
 
   end
-
 
   class Method
     def self.parse_method(cls_id, meth_id, io)

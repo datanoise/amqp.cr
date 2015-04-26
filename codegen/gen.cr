@@ -221,7 +221,7 @@ module CodeGen
 
     def generate_decode(io, indent, bit)
       if bit?
-        iputs "#{@name} = bits & (1 << #{bit})"
+        iputs "#{@name} = bits & (1 << #{bit}) == 1"
       else
         iputs "#{@name} = io.read_#{@domain.type}"
         iputs "raise ::IO::EOFError.new unless #{name}"
