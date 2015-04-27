@@ -117,12 +117,14 @@ module CodeGen
       iputs "class #{@name} < Method"
       do_indent do
         iputs "INDEX = #{@index}_u16"
-          if @has_content
-            iputs "CONTENT = true"
-          end
+        if @has_content
+          iputs "CONTENT = true"
+        end
 
-        io.puts
-        iputs "getter #{@fields.map(&.name).join(", ")}"
+        unless @fields.empty?
+          io.puts
+          iputs "getter #{@fields.map(&.name).join(", ")}"
+        end
 
         io.puts
         iputs "def initialize(#{@fields.map{|f| "@" + f.name}.join(", ")})"

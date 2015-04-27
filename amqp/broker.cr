@@ -1,3 +1,4 @@
+require "socket"
 require "./protocol"
 require "./spec091"
 require "./timed_channel"
@@ -67,8 +68,10 @@ class AMQP::Broker
     unless ex.errno == Errno::EBADF
       puts ex
       puts ex.backtrace.join("\n")
-      close
     end
+    close
+  rescue ex: IO::EOFError
+    close
   rescue ex
     puts ex
     puts ex.backtrace.join("\n")

@@ -1,4 +1,4 @@
-require "socket"
+require "./macros"
 require "./broker"
 require "./auth"
 
@@ -91,9 +91,7 @@ module AMQP
       register_consumer
 
       start = @rpc.receive
-      unless start.is_a?(Methods::Start)
-        raise Protocol::FrameError.new("Unexpected method #{start.id}")
-      end
+      assert_type(start, Methods::Start)
       @version_major = start.version_major
       @version_minor = start.version_minor
       @server_properties = start.server_properties
@@ -111,9 +109,7 @@ module AMQP
       @broker.send(ConnectionChannelID, start_ok)
 
       tune = @rpc.receive
-      unless tune.is_a?(Methods::Tune)
-        raise Protocol::FrameError.new("Unexpected method #{tune.id}")
-      end
+      assert_type(tune, Methods::Tune)
 
       pick = -> (client: UInt32, server: UInt32) {
         if client == 0 || server == 0
@@ -135,9 +131,7 @@ module AMQP
       open = Methods::Open.new(@config.vhost, "", false)
       @broker.send(ConnectionChannelID, open)
       open_ok = @rpc.receive
-      unless open_ok.is_a?(Methods::OpenOk)
-        raise Protocol::FrameError.new("Unexpected method #{open_ok.id}")
-      end
+      assert_type(open_ok, Methods::OpenOk)
     end
   end
 end

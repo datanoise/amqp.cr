@@ -1,8 +1,8 @@
+require "./macros"
 require "./protocol"
 require "./spec091"
 
 class AMQP::Channel
-
   # TODO:implement better channel id allocation algorithm
   @@next_channel = 0_u16
   protected def self.next_channel
@@ -10,50 +10,63 @@ class AMQP::Channel
     @@next_channel
   end
 
-  alias Methods = Protocol::Channel
   getter closed
+  getter broker
+  getter rpc
+  getter channel
 
   def initialize(@broker)
     @channel = Channel.next_channel
     @msgs = ::Channel(Protocol::Method).new
     @rpc = ::Channel(Protocol::Method).new
-    @flows = [] of Bool ->
+    @flow_callbacks = [] of Bool ->
+    @close_callbacks = [] of UInt16, String ->
     @closed = false
+    @exchanges = {} of String => Exchange
 
     register_consumer
-    open = Methods::Open.new("")
+    open = Protocol::Channel::Open.new("")
     @broker.send(@channel, open)
     open_ok = @rpc.receive
-    unless open_ok.is_a?(Methods::OpenOk)
-      raise Protocol::FrameError.new("Unexpected method received: #{open_ok}")
-    end
+    assert_type(open_ok, Protocol::Channel::OpenOk)
   end
 
-  def register_flow(&block: Bool ->)
-    @flows << block
-    @flows.length - 1
+  def notify_flow(&block: Bool ->)
+    @flow_callbacks << block
   end
 
-  def unregister_flow(id)
-    @flows.delete(id)
+  def notify_close(&block: UInt16, String ->)
+    @close_callbacks << block
   end
 
   def flow(active)
-    flow = Methods::Flow.new(active)
+    flow = Protocol::Channel::Flow.new(active)
     @broker.send(@channel, flow)
     flow_ok = @rpc.receive
-    unless flow_ok.is_a?(Methods::FlowOk)
-      raise Protocol::FrameError.new("Unexpected method received: #{flow_ok}")
-    end
+    assert_type(flow_ok, Protocol::Channel::FlowOk)
     flow_ok.active
   end
 
   def close(code = Protocol::REPLY_SUCCESS, msg = "bye", cls_id = 0, mth_id = 0)
-    @broker.send(@channel, Methods::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16))
+    return if @closed
+    @broker.send(@channel, Protocol::Channel::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16))
     close_ok = @rpc.receive
   end
 
-  private def close_internal
+  def exchange(name, kind, durable = false, auto_delete = false, internal = false,
+               no_wait = false, passive = false, args = Protocol::Table.new)
+    unless exchange = @exchanges[name]?
+      exchange = Exchange.new(self, name, kind, durable, auto_delete, internal, args)
+      exchange.declare(passive: passive, no_wait: no_wait)
+    end
+    exchange
+  end
+
+  def default_exchange
+    @default_exchange ||= Exchange.new("", "direct")
+  end
+
+  private def _close
     return if @closed
     @closed = true
 
@@ -66,13 +79,13 @@ class AMQP::Channel
       when Protocol::MethodFrame
         method = frame.method
         case method
-        when Methods::Flow
-          @broker.send(@channel, Methods::FlowOk.new(method.active))
-          @flows.each {|block| block.call method.active}
-        when Methods::Close
-          puts "Received channel close, #{method}"
-          @broker.send(@channel, Methods::CloseOk.new)
-          close_internal
+        when Protocol::Channel::Flow
+          @broker.send(@channel, Protocol::Channel::FlowOk.new(method.active))
+          @flow_callbacks.each {|block| block.call(method.active)}
+        when Protocol::Channel::Close
+          @broker.send(@channel, Protocol::Channel::CloseOk.new)
+          _close
+          @close_callbacks.each {|block| block.call(method.reply_code, method.reply_text)}
         else
           @rpc.send(method)
         end

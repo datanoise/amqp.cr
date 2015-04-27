@@ -509,8 +509,6 @@ module AMQP::Protocol
     class CloseOk < Method
       INDEX = 51_u16
 
-      getter 
-
       def initialize()
       end
 
@@ -571,8 +569,6 @@ module AMQP::Protocol
 
     class Unblocked < Method
       INDEX = 61_u16
-
-      getter 
 
       def initialize()
       end
@@ -800,8 +796,6 @@ module AMQP::Protocol
     class CloseOk < Method
       INDEX = 41_u16
 
-      getter 
-
       def initialize()
       end
 
@@ -915,8 +909,6 @@ module AMQP::Protocol
     class DeclareOk < Method
       INDEX = 11_u16
 
-      getter 
-
       def initialize()
       end
 
@@ -997,8 +989,6 @@ module AMQP::Protocol
 
     class DeleteOk < Method
       INDEX = 21_u16
-
-      getter 
 
       def initialize()
       end
@@ -1094,8 +1084,6 @@ module AMQP::Protocol
     class BindOk < Method
       INDEX = 31_u16
 
-      getter 
-
       def initialize()
       end
 
@@ -1189,8 +1177,6 @@ module AMQP::Protocol
 
     class UnbindOk < Method
       INDEX = 51_u16
-
-      getter 
 
       def initialize()
       end
@@ -1412,8 +1398,6 @@ module AMQP::Protocol
     class BindOk < Method
       INDEX = 21_u16
 
-      getter 
-
       def initialize()
       end
 
@@ -1498,8 +1482,6 @@ module AMQP::Protocol
 
     class UnbindOk < Method
       INDEX = 51_u16
-
-      getter 
 
       def initialize()
       end
@@ -1757,8 +1739,6 @@ module AMQP::Protocol
 
     class QosOk < Method
       INDEX = 11_u16
-
-      getter 
 
       def initialize()
       end
@@ -2455,8 +2435,6 @@ module AMQP::Protocol
     class RecoverOk < Method
       INDEX = 111_u16
 
-      getter 
-
       def initialize()
       end
 
@@ -2537,8 +2515,6 @@ module AMQP::Protocol
     class Select < Method
       INDEX = 10_u16
 
-      getter 
-
       def initialize()
       end
 
@@ -2565,8 +2541,6 @@ module AMQP::Protocol
 
     class SelectOk < Method
       INDEX = 11_u16
-
-      getter 
 
       def initialize()
       end
@@ -2595,8 +2569,6 @@ module AMQP::Protocol
     class Commit < Method
       INDEX = 20_u16
 
-      getter 
-
       def initialize()
       end
 
@@ -2623,8 +2595,6 @@ module AMQP::Protocol
 
     class CommitOk < Method
       INDEX = 21_u16
-
-      getter 
 
       def initialize()
       end
@@ -2653,8 +2623,6 @@ module AMQP::Protocol
     class Rollback < Method
       INDEX = 30_u16
 
-      getter 
-
       def initialize()
       end
 
@@ -2681,8 +2649,6 @@ module AMQP::Protocol
 
     class RollbackOk < Method
       INDEX = 31_u16
-
-      getter 
 
       def initialize()
       end
@@ -2752,8 +2718,6 @@ module AMQP::Protocol
 
     class SelectOk < Method
       INDEX = 11_u16
-
-      getter 
 
       def initialize()
       end
