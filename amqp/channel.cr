@@ -23,6 +23,7 @@ class AMQP::Channel
     @close_callbacks = [] of UInt16, String ->
     @closed = false
     @exchanges = {} of String => Exchange
+    @queues = {} of String => Queue
 
     register_consumer
     open = Protocol::Channel::Open.new("")
@@ -83,11 +84,26 @@ class AMQP::Channel
     exchange(name, "headers")
   end
 
-  private def _close
+  def queue(name, durable = false, passive = false, exclusive = false,
+            auto_delete = false, no_wait = false, args = Protocol::Table.new)
+    unless queue = @queues[name]?
+      queue = Queue.new(self, name, durable, exclusive, auto_delete, args)
+      queue.declare(passive, no_wait)
+      @queues[name] = queue
+    end
+    queue
+  end
+
+  private def do_close
     return if @closed
     @closed = true
 
     @broker.unregister_consumer(@channel)
+  end
+
+  def rpc_call(method)
+    @broker.send(@channel, method)
+    @rpc.receive
   end
 
   private def register_consumer
@@ -101,7 +117,7 @@ class AMQP::Channel
           @flow_callbacks.each {|block| block.call(method.active)}
         when Protocol::Channel::Close
           @broker.send(@channel, Protocol::Channel::CloseOk.new)
-          _close
+          do_close
           @close_callbacks.each {|block| block.call(method.reply_code, method.reply_text)}
         else
           @rpc.send(method)
