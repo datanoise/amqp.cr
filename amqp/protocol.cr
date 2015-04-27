@@ -10,9 +10,6 @@ module AMQP::Protocol
   end
 
   struct Decimal
-    scale :: UInt8
-    value :: Int32
-
     getter scale, value
 
     def initialize(@scale, @value)
@@ -37,6 +34,105 @@ module AMQP::Protocol
                 Hash(String, Field)
 
   alias Table = Hash(String, Field)
+
+  struct Properties
+    FLAG_CONTENT_TYPE     = 0x8000_u16
+    FLAG_CONTENT_ENCODING = 0x4000_u16
+    FLAG_HEADERS          = 0x2000_u16
+    FLAG_DELIVERY_MODE    = 0x1000_u16
+    FLAG_PRIORITY         = 0x0800_u16
+    FLAG_CORRELATION_ID   = 0x0400_u16
+    FLAG_REPLY_TO         = 0x0200_u16
+    FLAG_EXPIRATION       = 0x0100_u16
+    FLAG_MESSAGE_ID       = 0x0080_u16
+    FLAG_TIMESTAMP        = 0x0040_u16
+    FLAG_TYPE             = 0x0020_u16
+    FLAG_USER_ID          = 0x0010_u16
+    FLAG_APP_ID           = 0x0008_u16
+    FLAG_RESERVED1        = 0x0004_u16
+
+    property content_type
+    property content_encoding
+    property headers
+    property delivery_mode
+    property priority
+    property correlation_id
+    property reply_to
+    property expiration
+    property message_id
+    property timestamp
+    property type
+    property user_id
+    property app_id
+    property reserved1
+
+    def initialize(@content_type = "",
+                   @content_encoding = "",
+                   @headers = Protocol::Table.new,
+                   @delivery_mode = 0_u8,
+                   @priority = 0_u8,
+                   @correlation_id = "",
+                   @reply_to = "",
+                   @expiration = "",
+                   @message_id = "",
+                   @timestamp = Time.new(0),
+                   @type = "",
+                   @user_id = "",
+                   @app_id = "",
+                   @reserved1 = "")
+    end
+
+    def decode(flags, io)
+      @content_type = io.read_shortstr if flags & FLAG_CONTENT_TYPE > 0
+      @content_encoding = io.read_shortstr if flags & FLAG_CONTENT_ENCODING > 0
+      @headers = io.read_table if flags & FLAG_HEADERS > 0
+      @delivery_mode = io.read_octet if flags & FLAG_DELIVERY_MODE > 0
+      @priority = io.read_octet if flags & FLAG_PRIORITY > 0
+      @correlation_id = io.read_shortstr if flags & FLAG_CORRELATION_ID > 0
+      @reply_to = io.read_shortstr if flags & FLAG_REPLY_TO > 0
+      @expiration = io.read_shortstr if flags & FLAG_EXPIRATION > 0
+      @message_id = io.read_shortstr if flags & FLAG_MESSAGE_ID > 0
+      @timestamp = io.read_timestamp if flags & FLAG_TIMESTAMP > 0
+      @type = io.read_shortstr if flags & FLAG_TYPE > 0
+      @user_id = io.read_shortstr if flags & FLAG_USER_ID > 0
+      @app_id = io.read_shortstr if flags & FLAG_APP_ID > 0
+      @reserved1 = io.read_shortstr if flags & FLAG_RESERVED1 > 0
+    end
+
+    def encode(io)
+      flags = 0_u16
+      flags = flags | FLAG_CONTENT_TYPE unless @content_type.empty?
+      flags = flags | FLAG_CONTENT_ENCODING unless @content_encoding.empty?
+      flags = flags | FLAG_HEADERS unless @headers.empty?
+      flags = flags | FLAG_DELIVERY_MODE unless @delivery_mode == 0
+      flags = flags | FLAG_PRIORITY unless @priority == 0
+      flags = flags | FLAG_CORRELATION_ID unless @correlation_id.empty?
+      flags = flags | FLAG_REPLY_TO unless @reply_to.empty?
+      flags = flags | FLAG_EXPIRATION unless @expiration.empty?
+      flags = flags | FLAG_MESSAGE_ID unless @message_id.empty?
+      flags = flags | FLAG_TIMESTAMP unless @timestamp.ticks == 0
+      flags = flags | FLAG_TYPE unless @type.empty?
+      flags = flags | FLAG_USER_ID unless @user_id.empty?
+      flags = flags | FLAG_APP_ID unless @app_id.empty?
+      flags = flags | FLAG_RESERVED1 unless @reserved1.empty?
+
+      io.write_short(flags)
+      io.write_shortstr(@content_type) unless @content_type.empty?
+      io.write_shortstr(@content_encoding) unless @content_encoding.empty?
+      io.write_table(@headers) unless @headers.empty?
+      io.write_octet(@delivery_mode) unless @delivery_mode == 0
+      io.write_octet(@property) unless @property == 0
+      io.write_shortstr(@correlation_id) unless @correlation_id.empty?
+      io.write_shortstr(@reply_to) unless @reply_to.empty?
+      io.write_shortstr(@expiration) unless @expiration.empty?
+      io.write_shortstr(@message_id) unless @message_id.empty?
+      io.write_timestamp(@timestamp) unless @timestamp.empty?
+      io.write_shortstr(@type) unless @type.empty?
+      io.write_shortstr(@user_id) unless @user_id.empty?
+      io.write_shortstr(@app_id) unless @app_id.empty?
+      io.write_shortstr(@reserved1) unless @reserved1.empty?
+    end
+  end
 
   abstract class Frame
     METHOD    = 1_u8
@@ -68,7 +164,7 @@ module AMQP::Protocol
               when METHOD
                 MethodFrame.parse(channel, size, io)
               when HEADERS
-                HeadersFrame.parse(channel, size, io)
+                HeaderFrame.parse(channel, size, io)
               when BODY
                 BodyFrame.parse(channel, size, io)
               when HEARTBEAT
@@ -97,7 +193,7 @@ module AMQP::Protocol
       cls_id = io.read_short
       meth_id = io.read_short
       method = Method.parse_method(cls_id, meth_id, io)
-      MethodFrame.new(channel, method)
+      new(channel, method)
     end
 
     def get_payload
@@ -113,39 +209,63 @@ module AMQP::Protocol
     end
   end
 
-  class HeadersFrame < Frame
-    def initialize(@channel)
+  class HeaderFrame < Frame
+    def initialize(@channel, @cls_id, @weight, @body_size)
       @type = HEADERS
+      @properties = Properties.new
     end
 
     def self.parse(channel, size, io)
-      raise "not implemented"
+      cls_id = io.read_short
+      raise ::IO::EOFError.new unless cls_id
+      weight = io.read_short
+      raise ::IO::EOFError.new unless weight
+      body_size = io.read_longlong
+      raise ::IO::EOFError.new unless body_size
+      flags = io.read_short
+      raise ::IO::EOFError.new unless flags
+      new(channel, cls_id, weight, body_size).tap &.decode_properties(flags, io)
     end
 
     def get_payload
-      raise "not implemented"
+      buf = StringIO.new
+      io = IO.new(buf)
+      io.write_short(@cls_id)
+      io.write_short(@weight)
+      io.write_longlong(@body_size)
+      @properties.encode(io)
+      buf.to_s.to_slice
+    end
+
+    protected def decode_properties(flags, io)
+      @properties.decode(flags, io)
     end
 
     def to_s(io)
-      io << "HeadersFrame"
+      io << "HeaderFrame: " << "cls_id: #{@cls_id}, weight: #{@weight}, body_size: #{@body_size}"
+      io << ", properties: #{@properties}"
     end
   end
 
   class BodyFrame < Frame
-    def initialize(@channel)
+    def initialize(@channel, @body)
       @type = BODY
     end
 
     def self.parse(channel, size, io)
-      raise "not implemented"
+      body = Slice(UInt8).new(size.to_i32)
+      unless io.read(body)
+        raise ::IO::EOFError.new
+      end
+      new(channel, body)
     end
 
     def get_payload
-      raise "not implemented"
+      @body
     end
 
     def to_s(io)
-      io << "BodyFrame"
+      io << "BodyFrame: " << @body
     end
   end
 
@@ -162,7 +282,7 @@ module AMQP::Protocol
       unless size == 0
         raise FrameError.new("Heartbeat frame must have an empty payload")
       end
-      HeartbeatFrame.new
+      new
     end
 
     def get_payload
@@ -396,6 +516,10 @@ module AMQP::Protocol
        write_longstr(buf.to_s)
      end
 
+     def write_timestamp(v: Time)
+       write(v.to_i.to_i64)
+     end
+
      protected def write_field(field)
        case field
        when Bool
@@ -431,7 +555,7 @@ module AMQP::Protocol
          field.each {|v| write_field(v)}
        when Time
          write_octet('T')
-         write(field.to_i.to_i64)
+         write_timestamp(field)
        when Hash
          write_octet('F')
          write_table(field)
@@ -465,7 +589,7 @@ module AMQP::Protocol
       Decimal.new(scale, value)
     end
 
-    protected def read_timestamp
+    def read_timestamp
       tv_sec = read_int64
       return nil unless tv_sec
       spec = LibC::TimeSpec.new

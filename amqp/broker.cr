@@ -56,7 +56,7 @@ class AMQP::Broker
       case frame
       when Protocol::MethodFrame
         on_method(frame)
-      when Protocol::HeadersFrame
+      when Protocol::HeaderFrame
       when Protocol::BodyFrame
       when Protocol::HeartbeatFrame
         on_heartbeat

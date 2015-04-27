@@ -122,7 +122,7 @@ class AMQP::Channel
         else
           @rpc.send(method)
         end
-      when Protocol::HeadersFrame
+      when Protocol::HeaderFrame
       when Protocol::BodyFrame
       end
     end
