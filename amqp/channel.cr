@@ -58,12 +58,29 @@ class AMQP::Channel
     unless exchange = @exchanges[name]?
       exchange = Exchange.new(self, name, kind, durable, auto_delete, internal, args)
       exchange.declare(passive: passive, no_wait: no_wait)
+      @exchanges[name] = exchange
     end
     exchange
   end
 
   def default_exchange
     @default_exchange ||= Exchange.new("", "direct")
+  end
+
+  def fanout(name)
+    exchange(name, "fanout")
+  end
+
+  def direct(name)
+    exchange(name, "direct")
+  end
+
+  def topic(name)
+    exchange(name, "topic")
+  end
+
+  def headers(name)
+    exchange(name, "headers")
   end
 
   private def _close
