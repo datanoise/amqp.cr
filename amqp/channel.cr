@@ -144,6 +144,13 @@ class AMQP::Channel
     self
   end
 
+  def recover(requeue = false)
+    recover = Protocol::Basic::Recover.new(requeue)
+    recover_ok = rpc_call(recover)
+    assert_type(recover_ok, Protocol::Basic::RecoverOk)
+    self
+  end
+
   private def do_close
     return if @closed
     @closed = true
