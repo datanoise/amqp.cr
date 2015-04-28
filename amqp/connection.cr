@@ -55,7 +55,7 @@ module AMQP
       @running_loop = true
       loop do
         break if closed
-        break if @close.receive?(1.seconds)
+        break if @close.receive(1.seconds)
       end
     ensure
       @running_loop = false

@@ -1,7 +1,6 @@
 module Timed
   class ChannelError < Exception; end
   class ChannelClosed < ChannelError; end
-  class ChannelTimeout < ChannelError; end
 
   abstract class Channel(T)
     def initialize
@@ -18,14 +17,6 @@ module Timed
       BufferedChannel(T).new(capacity)
     end
 
-    def receive(timeout = 0.seconds)
-      receive(timeout) { raise ChannelTimeout.new }
-    end
-
-    def receive?(timeout = 0.seconds)
-      receive(timeout) { nil }
-    end
-
     def self.select(*channels)
       loop do
         ready_channel = channels.find &.ready?
@@ -34,6 +25,16 @@ module Timed
         channels.each &.wait
         Scheduler.reschedule
         channels.each &.unwait
+      end
+    end
+
+    def receive(timeout)
+      timer = TimerChannel.new(timeout)
+      case Channel(T).select(self, timer)
+      when self
+        self.receive
+      when timer
+        nil
       end
     end
 
@@ -49,6 +50,43 @@ module Timed
 
     protected def unwait
       @receivers.delete Fiber.current
+    end
+  end
+
+  class TimerChannel < Channel(Time)
+    def initialize(@interval: TimeSpan)
+      raise ChannelError.new("invalid timespan") if @interval.ticks == 0
+      @start_time = Time.now
+      super()
+    end
+
+    def send
+      raise ChannelError.new("not implemented")
+    end
+
+    def wait
+      interval = Time.now - @start_time
+      interval = @interval - interval
+      Scheduler.sleep interval.total_seconds
+      super()
+    end
+
+    def receive
+      until ready?
+        unwait
+        raise ChannelClosed.new if @closed
+
+        wait
+        Scheduler.reschedule
+      end
+
+      raise ChannelClosed.new if @closed
+
+      @start_time = Time.now
+    end
+
+    def ready?
+      Time.now - @start_time > @interval
     end
   end
 
@@ -73,19 +111,9 @@ module Timed
       @receivers.clear
     end
 
-    def receive(timeout = 0.seconds)
-      start_time = Time.now
+    def receive
       while empty?
         raise ChannelClosed.new if @closed
-
-        if timeout != 0.seconds
-          diff = Time.now - start_time
-          if diff > timeout
-            return yield
-          else
-            Scheduler.sleep(timeout.total_seconds)
-          end
-        end
 
         @receivers << Fiber.current
         Scheduler.reschedule
@@ -133,19 +161,9 @@ module Timed
       end
     end
 
-    def receive(timeout = 0.seconds)
-      start_time = Time.now
+    def receive
       while @value.nil?
         raise ChannelClosed.new if @closed
-
-        if timeout != 0.seconds
-          diff = Time.now - start_time
-          if diff > timeout
-            return yield
-          else
-            Scheduler.sleep(timeout.total_seconds)
-          end
-        end
 
         @receivers << Fiber.current
         if sender = @senders.pop?
