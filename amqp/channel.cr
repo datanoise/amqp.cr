@@ -126,6 +126,13 @@ class AMQP::Channel
     self
   end
 
+  def qos(prefetch_size, prefetch_count, global = false)
+    qos = Protocol::Basic::Qos.new(prefetch_size.to_u32, prefetch_count.to_u16, global)
+    qos_ok = rpc_call(qos)
+    assert_type(qos_ok, Protocol::Basic::QosOk)
+    self
+  end
+
   private def do_close
     return if @closed
     @closed = true
@@ -163,8 +170,8 @@ class AMQP::Channel
         @flow_callbacks.each &.call(method.active)
       when Protocol::Channel::Close
         oneway_call(Protocol::Channel::CloseOk.new)
-        do_close
         @close_callbacks.each &.call(method.reply_code, method.reply_text)
+        do_close
       when Protocol::Basic::Cancel
         @subscribers.delete(method.consumer_tag)
         oneway_call(Protocol::Basic::CancelOk.new(method.consumer_tag))
