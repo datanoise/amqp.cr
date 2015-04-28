@@ -5,7 +5,7 @@ COUNT = 20
 EXCHANGE_NAME = "sender_receiver"
 QUEUE_NAME = "sender_receiver"
 
-conn = AMQP::Connection.new(AMQP::Config.new(logger_level: Logger::DEBUG))
+conn = AMQP::Connection.new #(AMQP::Config.new(logger_level: Logger::DEBUG))
 puts "Started"
 
 conn.on_close do |code, msg|
@@ -29,8 +29,8 @@ queue.subscribe do |msg|
   msg.ack
 end
 
-COUNT.times do
-  msg = AMQP::Message.new("test message")
+COUNT.times do |idx|
+  msg = AMQP::Message.new("test message: #{idx+1}")
   exchange.publish(msg, QUEUE_NAME)
   sleep 0.1
 end
