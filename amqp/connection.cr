@@ -58,8 +58,8 @@ module AMQP
 
     def close(code, msg, cls_id = 0, mth_id = 0)
       close_mth = Protocol::Connection::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16)
-      @broker.send(ConnectionChannelID, close_mth)
-      close_ok = @rpc.receive
+      close_ok = rpc_call(close_mth)
+      assert_type(close_ok, Protocol::Connection::CloseOk)
       @close_callbacks.each &.call(code.to_u16, msg)
       @broker.close
     end
@@ -74,6 +74,27 @@ module AMQP
 
     def channel
       Channel.new(@broker)
+    end
+
+    def block(reason)
+      block = Protocol::Connection::Blocked.new(reason)
+      oneway_call(block)
+      self
+    end
+
+    def unblock
+      unblock = Protocol::Connection::Unblocked.new
+      oneway_call(unblock)
+      self
+    end
+
+    private def oneway_call(method)
+      @broker.send(ConnectionChannelID, method)
+    end
+
+    private def rpc_call(method)
+      oneway_call(method)
+      @rpc.receive
     end
 
     private def register_consumer
