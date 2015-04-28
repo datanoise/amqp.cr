@@ -31,8 +31,7 @@ class AMQP::Channel
 
     register
     open = Protocol::Channel::Open.new("")
-    @broker.send(@channel, open)
-    open_ok = @rpc.receive
+    open_ok = rpc_call(open)
     assert_type(open_ok, Protocol::Channel::OpenOk)
   end
 
@@ -46,16 +45,15 @@ class AMQP::Channel
 
   def flow(active)
     flow = Protocol::Channel::Flow.new(active)
-    @broker.send(@channel, flow)
-    flow_ok = @rpc.receive
+    flow_ok = rpc_call(flow)
     assert_type(flow_ok, Protocol::Channel::FlowOk)
     flow_ok.active
   end
 
   def close(code = Protocol::REPLY_SUCCESS, msg = "bye", cls_id = 0, mth_id = 0)
     return if @closed
-    @broker.send(@channel, Protocol::Channel::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16))
-    close_ok = @rpc.receive
+    close_ok = rpc_call(Protocol::Channel::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16))
+    assert_type(close_ok, Protocol::Channel::CloseOk)
   end
 
   def exchange(name, kind, durable = false, auto_delete = false, internal = false,
@@ -110,6 +108,24 @@ class AMQP::Channel
     @subscribers.has_key?(consumer_tag)
   end
 
+  def ack(delivery_tag, multiple = false)
+    ack = Protocol::Basic::Ack.new(delivery_tag, multiple)
+    oneway_call(ack)
+    self
+  end
+
+  def reject(delivery_tag, requeue = false)
+    reject = Protocol::Basic::Reject.new(delivery_tag, requeue)
+    oneway_call(reject)
+    self
+  end
+
+  def nack(delivery_tag, multiple = false, requeue = false)
+    nack = Protocol::Basic::Nack.new(delivery_tag, multiple, requeue)
+    oneway_call(nack)
+    self
+  end
+
   private def do_close
     return if @closed
     @closed = true
@@ -118,7 +134,7 @@ class AMQP::Channel
   end
 
   def rpc_call(method)
-    @broker.send(@channel, method)
+    oneway_call(method)
     @rpc.receive
   end
 
@@ -143,15 +159,15 @@ class AMQP::Channel
 
       case method
       when Protocol::Channel::Flow
-        @broker.send(@channel, Protocol::Channel::FlowOk.new(method.active))
+        oneway_call(Protocol::Channel::FlowOk.new(method.active))
         @flow_callbacks.each &.call(method.active)
       when Protocol::Channel::Close
-        @broker.send(@channel, Protocol::Channel::CloseOk.new)
+        oneway_call(Protocol::Channel::CloseOk.new)
         do_close
         @close_callbacks.each &.call(method.reply_code, method.reply_text)
       when Protocol::Basic::Cancel
         @subscribers.delete(method.consumer_tag)
-        @broker.send(@channel, Protocol::Basic::CancelOk.new(method.consumer_tag))
+        oneway_call(Protocol::Basic::CancelOk.new(method.consumer_tag))
       else
         @rpc.send(method)
       end

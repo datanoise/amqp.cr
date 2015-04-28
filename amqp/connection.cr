@@ -29,14 +29,13 @@ module AMQP
     DefaultVersion = "0.1"
     ConnectionChannelID = 0_u16
 
-    alias Methods = Protocol::Connection
-
     getter config
 
     def initialize(@config = Config.new)
       @rpc = ::Channel(Protocol::Method).new
       @broker = Broker.new(@config)
       @close = ::Channel(Bool).new
+      @close_callbacks = [] of UInt16, String ->
     end
 
     def self.start(config = Config.new)
@@ -58,14 +57,19 @@ module AMQP
     end
 
     def close(code, msg, cls_id = 0, mth_id = 0)
-      close_mth = Methods::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16)
+      close_mth = Protocol::Connection::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16)
       @broker.send(ConnectionChannelID, close_mth)
       close_ok = @rpc.receive
+      @close_callbacks.each &.call(code.to_u16, msg)
       @broker.close
     end
 
     def closed
       @broker.closed
+    end
+
+    def on_close(&block: UInt16, String ->)
+      @close_callbacks << block
     end
 
     def channel
@@ -76,11 +80,13 @@ module AMQP
       @broker.register_consumer(ConnectionChannelID) do |frame|
         case frame
         when Protocol::MethodFrame
-          case frame.method
-          when Methods::Close
-            close_ok = Methods::CloseOk.new
+          method = frame.method
+          case method
+          when Protocol::Connection::Close
+            close_ok = Protocol::Connection::CloseOk.new
             @broker.send(frame.channel, close_ok)
             @broker.close
+            @close_callbacks.each &.call(method.reply_code, method.reply_text)
           else
             @rpc.send(frame.method)
           end
@@ -96,7 +102,7 @@ module AMQP
       register_consumer
 
       start = @rpc.receive
-      assert_type(start, Methods::Start)
+      assert_type(start, Protocol::Connection::Start)
       @version_major = start.version_major
       @version_minor = start.version_minor
       @server_properties = start.server_properties
@@ -109,12 +115,12 @@ module AMQP
       capabilities["consumer_cancel_notify"] = true
       auth = Auth.get_authenticator(start.mechanisms)
 
-      start_ok = Methods::StartOk.new(
+      start_ok = Protocol::Connection::StartOk.new(
         client_properties, "PLAIN", auth.response(@config.username, @config.password), "")
       @broker.send(ConnectionChannelID, start_ok)
 
       tune = @rpc.receive
-      assert_type(tune, Methods::Tune)
+      assert_type(tune, Protocol::Connection::Tune)
 
       pick = -> (client: UInt32, server: UInt32) {
         if client == 0 || server == 0
@@ -127,17 +133,17 @@ module AMQP
       @config.frame_max = pick.call(@config.frame_max.to_u32, tune.frame_max.to_u32).to_u32
       @config.heartbeat = pick.call(@config.heartbeat.total_seconds.to_u32, tune.heartbeat.to_u32).seconds
 
-      tune_ok = Methods::TuneOk.new(
+      tune_ok = Protocol::Connection::TuneOk.new(
         @config.channel_max, @config.frame_max, @config.heartbeat.total_seconds.to_u16)
       @broker.send(ConnectionChannelID, tune_ok)
 
       @broker.start_heartbeater
 
-      open = Methods::Open.new(@config.vhost, "", false)
+      open = Protocol::Connection::Open.new(@config.vhost, "", false)
       @broker.send(ConnectionChannelID, open)
       open_ok = @rpc.receive
-      assert_type(open_ok, Methods::OpenOk)
-      @broker.on_close { puts "closing"; @close.send(true) }
+      assert_type(open_ok, Protocol::Connection::OpenOk)
+      @broker.on_close { @close.send(true) }
     end
   end
 end
