@@ -63,4 +63,17 @@ class AMQP::Queue
     @channel.unregister_subscriber(consumer_tag)
     true
   end
+
+  def get(no_ack = false)
+    get = Protocol::Basic::Get.new(0_u16, @name, no_ack)
+    response = @channel.rpc_call(get)
+    case response
+    when Protocol::Basic::GetOk
+      return @channel.msg.receive
+    when Protocol::Basic::GetEmpty
+      return nil
+    else
+      raise Protocol::FrameError.new("Invalid method received: #{response}")
+    end
+  end
 end

@@ -2,6 +2,7 @@ require "socket"
 require "./protocol"
 require "./spec091"
 require "./timed_channel"
+require "colorize"
 
 class AMQP::Broker
   ProtocolHeader = ['A'.ord, 'M'.ord, 'Q'.ord, 'P'.ord, 0, 0, 9, 1].map(&.to_u8)
@@ -11,7 +12,7 @@ class AMQP::Broker
   def initialize(@config)
     @socket = TCPSocket.new(@config.host, @config.port)
     @io = Protocol::IO.new(@socket)
-    @sends = ::Channel(Time).new(1)
+    @sends = Timed::Channel(Time).new(1)
     @closed = false
     @heartbeater_started = false
     @sending = false
@@ -67,13 +68,13 @@ class AMQP::Broker
   end
 
   private def transmit_frame(frame)
-    puts ">> #{frame}"
+    puts ">> #{frame}".colorize.green
     frame.encode(@io)
     @sends.send(Time.now) if @heartbeater_started
   end
 
   def on_close(&block: ->)
-    @close_callbacks << block
+    @close_callbacks.unshift block
   end
 
   def close
@@ -97,7 +98,7 @@ class AMQP::Broker
   private def process_frames
     loop do
       frame = Protocol::Frame.decode(@io)
-      puts "<< #{frame}"
+      puts "<< #{frame}".colorize.blue
 
       case frame
       when Protocol::MethodFrame

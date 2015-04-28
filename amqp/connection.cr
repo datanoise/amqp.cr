@@ -32,24 +32,32 @@ module AMQP
     getter config
 
     def initialize(@config = Config.new)
-      @rpc = ::Channel(Protocol::Method).new
+      @rpc = Timed::Channel(Protocol::Method).new
       @broker = Broker.new(@config)
-      @close = ::Channel(Bool).new
+      @close = Timed::Channel(Bool).new
       @close_callbacks = [] of UInt16, String ->
+      handshake
     end
 
     def self.start(config = Config.new)
       conn = Connection.new(config)
-      conn.handshake
       yield conn
       conn.run_loop
+      conn.close
     end
 
-    protected def run_loop
+    def run_loop
+      @running_loop = true
       loop do
         break if closed
-        @close.receive(1.seconds)
+        break if @close.receive?(1.seconds)
       end
+    ensure
+      @running_loop = false
+    end
+
+    def loop_break
+      @close.send(true) if @running_loop
     end
 
     def close
@@ -57,11 +65,12 @@ module AMQP
     end
 
     def close(code, msg, cls_id = 0, mth_id = 0)
+      return if closed
       close_mth = Protocol::Connection::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16)
       close_ok = rpc_call(close_mth)
       assert_type(close_ok, Protocol::Connection::CloseOk)
       @close_callbacks.each &.call(code.to_u16, msg)
-      @broker.close
+      do_close
     end
 
     def closed
@@ -69,7 +78,13 @@ module AMQP
     end
 
     def on_close(&block: UInt16, String ->)
-      @close_callbacks << block
+      @close_callbacks.unshift block
+    end
+
+    private def do_close
+      @broker.close unless @broker.closed
+      @rpc.close
+      loop_break
     end
 
     def channel
@@ -164,7 +179,7 @@ module AMQP
       @broker.send(ConnectionChannelID, open)
       open_ok = @rpc.receive
       assert_type(open_ok, Protocol::Connection::OpenOk)
-      @broker.on_close { @close.send(true) }
+      @broker.on_close { do_close }
     end
   end
 end

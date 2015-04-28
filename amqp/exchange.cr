@@ -48,4 +48,8 @@ class AMQP::Exchange
     @channel.oneway_call(publish)
     self
   end
+
+  def on_return(&block: UInt16, String, Message ->)
+    @channel.on_return(&block)
+  end
 end

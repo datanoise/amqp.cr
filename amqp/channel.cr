@@ -13,18 +13,21 @@ class AMQP::Channel
   getter closed
   getter broker
   getter rpc
-  getter channel
+  getter msg
 
   def initialize(@broker)
-    @channel = Channel.next_channel
-    @msgs = ::Channel(Protocol::Method).new
-    @rpc = ::Channel(Protocol::Method).new
+    @channel_id = Channel.next_channel
+    @rpc = Timed::Channel(Protocol::Method).new
+    @msg = Timed::Channel(Message).new(1)
     @flow_callbacks = [] of Bool ->
     @close_callbacks = [] of UInt16, String ->
     @closed = false
     @exchanges = {} of String => Exchange
     @queues = {} of String => Queue
     @subscribers = {} of String => Message ->
+    @on_return_callback = -> (code: UInt16, text: String, msg: Message) {}
+
+    # these fields are used to buffer incoming methods with content
     @content_method = nil
     @payload = nil
     @header_frame = nil
@@ -108,6 +111,10 @@ class AMQP::Channel
     @subscribers.has_key?(consumer_tag)
   end
 
+  def on_return(&block: UInt16, String, Message ->)
+    @on_return_callback = block
+  end
+
   def ack(delivery_tag, multiple = false)
     ack = Protocol::Basic::Ack.new(delivery_tag, multiple)
     oneway_call(ack)
@@ -137,7 +144,9 @@ class AMQP::Channel
     return if @closed
     @closed = true
 
-    @broker.unregister_consumer(@channel)
+    @msg.close
+    @rpc.close
+    @broker.unregister_consumer(@channel_id)
   end
 
   def rpc_call(method)
@@ -146,12 +155,15 @@ class AMQP::Channel
   end
 
   def oneway_call(method)
-    @broker.send(@channel, method)
+    @broker.send(@channel_id, method)
   end
 
   private def register
-    @broker.register_consumer(@channel) do |frame|
+    @broker.register_consumer(@channel_id) do |frame|
       process_frame(frame)
+    end
+    @broker.on_close do
+      do_close
     end
   end
 
@@ -174,7 +186,8 @@ class AMQP::Channel
         do_close
       when Protocol::Basic::Cancel
         @subscribers.delete(method.consumer_tag)
-        oneway_call(Protocol::Basic::CancelOk.new(method.consumer_tag))
+        # rabbitmq doesn't implement this method
+        # oneway_call(Protocol::Basic::CancelOk.new(method.consumer_tag))
       else
         @rpc.send(method)
       end
@@ -215,6 +228,21 @@ class AMQP::Channel
       else
         subscriber.call(msg)
       end
+    when Protocol::Basic::Return
+      msg.exchange = @exchanges[content_method.exchange]
+      msg.key = content_method.routing_key
+      @on_return_callback.call(content_method.reply_code, content_method.reply_text, msg)
+    when Protocol::Basic::GetOk
+      msg.delivery_tag = content_method.delivery_tag
+      msg.redelivered = content_method.redelivered
+      msg.exchange = @exchanges[content_method.exchange]
+      msg.key = content_method.routing_key
+      msg.message_count = content_method.message_count
+      @msg.send(msg)
+      @rpc.send(content_method)
     end
+    @content_method = nil
+    @payload = nil
+    @header_frame = nil
   end
 end

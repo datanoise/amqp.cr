@@ -1,10 +1,16 @@
 class AMQP::Message
   getter! body
   getter! properties
+
+  # the following properties are provided by 'get' and 'deliver' methods
   property delivery_tag
   property redelivered
+  # these two properties are also provider by 'return' method
   property exchange
   property key
+
+  # provided by amqp 'get' method
+  property message_count
 
   def initialize(@body, @properties = Protocol::Properties.new)
   end
