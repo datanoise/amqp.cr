@@ -3,4 +3,3 @@ macro assert_type(var, type)
     raise Protocol::FrameError.new("Unexpected method received: #{{{var.id}}}")
   end
 end
-

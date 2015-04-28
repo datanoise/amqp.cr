@@ -24,19 +24,23 @@ class AMQP::Channel
     @closed = false
     @exchanges = {} of String => Exchange
     @queues = {} of String => Queue
+    @subscribers = {} of String => Message ->
+    @content_method = nil
+    @payload = nil
+    @header_frame = nil
 
-    register_consumer
+    register
     open = Protocol::Channel::Open.new("")
     @broker.send(@channel, open)
     open_ok = @rpc.receive
     assert_type(open_ok, Protocol::Channel::OpenOk)
   end
 
-  def notify_flow(&block: Bool ->)
+  def on_flow(&block: Bool ->)
     @flow_callbacks << block
   end
 
-  def notify_close(&block: UInt16, String ->)
+  def on_close(&block: UInt16, String ->)
     @close_callbacks << block
   end
 
@@ -94,6 +98,18 @@ class AMQP::Channel
     queue
   end
 
+  def register_subscriber(consumer_tag, block)
+    @subscribers[consumer_tag] = block
+  end
+
+  def unregister_subscriber(consumer_tag)
+    @subscribers.delete(consumer_tag)
+  end
+
+  def has_subscriber?(consumer_tag)
+    @subscribers.has_key?(consumer_tag)
+  end
+
   private def do_close
     return if @closed
     @closed = true
@@ -106,24 +122,75 @@ class AMQP::Channel
     @rpc.receive
   end
 
-  private def register_consumer
+  def oneway_call(method)
+    @broker.send(@channel, method)
+  end
+
+  private def register
     @broker.register_consumer(@channel) do |frame|
-      case frame
-      when Protocol::MethodFrame
-        method = frame.method
-        case method
-        when Protocol::Channel::Flow
-          @broker.send(@channel, Protocol::Channel::FlowOk.new(method.active))
-          @flow_callbacks.each {|block| block.call(method.active)}
-        when Protocol::Channel::Close
-          @broker.send(@channel, Protocol::Channel::CloseOk.new)
-          do_close
-          @close_callbacks.each {|block| block.call(method.reply_code, method.reply_text)}
-        else
-          @rpc.send(method)
+      process_frame(frame)
+    end
+  end
+
+  private def process_frame(frame)
+    case frame
+    when Protocol::MethodFrame
+      method = frame.method
+      if method.has_content?
+        @content_method = method
+        return
+      end
+
+      case method
+      when Protocol::Channel::Flow
+        @broker.send(@channel, Protocol::Channel::FlowOk.new(method.active))
+        @flow_callbacks.each &.call(method.active)
+      when Protocol::Channel::Close
+        @broker.send(@channel, Protocol::Channel::CloseOk.new)
+        do_close
+        @close_callbacks.each &.call(method.reply_code, method.reply_text)
+      when Protocol::Basic::Cancel
+        @subscribers.delete(method.consumer_tag)
+        @broker.send(@channel, Protocol::Basic::CancelOk.new(method.consumer_tag))
+      else
+        @rpc.send(method)
+      end
+    when Protocol::HeaderFrame
+      @header_frame = frame
+      @payload = StringIO.new
+      if frame.body_size == 0
+        deliver_content
+      end
+    when Protocol::BodyFrame
+      payload = @payload
+      header_frame = @header_frame
+      if payload && header_frame
+        payload.write(frame.body)
+        if payload.bytesize >= header_frame.body_size
+          deliver_content
         end
-      when Protocol::HeaderFrame
-      when Protocol::BodyFrame
+      else
+        # FIXME
+        puts "Invalid state. Haven't received header frame"
+      end
+    end
+  end
+
+  private def deliver_content
+    msg = Message.new(@payload.not_nil!.to_s, @header_frame.not_nil!.properties)
+    content_method = @content_method.not_nil!
+    case content_method
+    when Protocol::Basic::Deliver
+      msg.delivery_tag = content_method.delivery_tag
+      msg.redelivered = content_method.redelivered
+      msg.exchange = @exchanges[content_method.exchange]
+      msg.key = content_method.routing_key
+      subscriber = @subscribers[content_method.consumer_tag]?
+      unless subscriber
+        # FIXME
+        puts "no subscriber for consumer_tag #{content_method.consumer_tag} is found"
+      else
+        subscriber.call(msg)
       end
     end
   end

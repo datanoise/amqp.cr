@@ -1,4 +1,12 @@
 module AMQP::Protocol
+
+  # 0      1         3             7                  size+7 size+8
+  # +------+---------+-------------+  +------------+  +-----------+
+  # | type | channel |     size    |  |  payload   |  | frame-end |
+  # +------+---------+-------------+  +------------+  +-----------+
+  #  octet   short         long         size octets       octet
+  FRAME_HEADER_SIZE = 1 + 2 + 4 + 1
+
   class SoftError < Exception
   end
 
@@ -83,54 +91,111 @@ module AMQP::Protocol
     end
 
     def decode(flags, io)
-      @content_type = io.read_shortstr if flags & FLAG_CONTENT_TYPE > 0
-      @content_encoding = io.read_shortstr if flags & FLAG_CONTENT_ENCODING > 0
-      @headers = io.read_table if flags & FLAG_HEADERS > 0
-      @delivery_mode = io.read_octet if flags & FLAG_DELIVERY_MODE > 0
-      @priority = io.read_octet if flags & FLAG_PRIORITY > 0
-      @correlation_id = io.read_shortstr if flags & FLAG_CORRELATION_ID > 0
-      @reply_to = io.read_shortstr if flags & FLAG_REPLY_TO > 0
-      @expiration = io.read_shortstr if flags & FLAG_EXPIRATION > 0
-      @message_id = io.read_shortstr if flags & FLAG_MESSAGE_ID > 0
-      @timestamp = io.read_timestamp if flags & FLAG_TIMESTAMP > 0
-      @type = io.read_shortstr if flags & FLAG_TYPE > 0
-      @user_id = io.read_shortstr if flags & FLAG_USER_ID > 0
-      @app_id = io.read_shortstr if flags & FLAG_APP_ID > 0
-      @reserved1 = io.read_shortstr if flags & FLAG_RESERVED1 > 0
+      if flags & FLAG_CONTENT_TYPE > 0
+        content_type = io.read_shortstr
+        raise ::IO::EOFError.new unless content_type
+        @content_type = content_type
+      end
+      if flags & FLAG_CONTENT_ENCODING > 0
+        content_encoding = io.read_shortstr
+        raise ::IO::EOFError.new unless content_encoding
+        @content_encoding = content_encoding
+      end
+      if flags & FLAG_HEADERS > 0
+        headers = io.read_table
+        raise ::IO::EOFError.new unless headers
+        @headers = headers
+      end
+      if flags & FLAG_DELIVERY_MODE > 0
+        delivery_mode = io.read_octet
+        raise ::IO::EOFError.new unless delivery_mode
+        @delivery_mode = delivery_mode
+      end
+      if flags & FLAG_PRIORITY > 0
+        priority = io.read_octet
+        raise ::IO::EOFError.new unless priority
+        @priority = priority
+      end
+      if flags & FLAG_CORRELATION_ID > 0
+        correlation_id = io.read_shortstr
+        raise ::IO::EOFError.new unless correlation_id
+        @correlation_id = correlation_id
+      end
+      if flags & FLAG_REPLY_TO > 0
+        reply_to = io.read_shortstr
+        raise ::IO::EOFError.new unless reply_to
+        @reply_to = reply_to
+      end
+      if flags & FLAG_EXPIRATION > 0
+        expiration = io.read_shortstr
+        raise ::IO::EOFError.new unless expiration
+        @expiration = expiration
+      end
+      if flags & FLAG_MESSAGE_ID > 0
+        message_id = io.read_shortstr
+        raise ::IO::EOFError.new unless message_id
+        @message_id = message_id
+      end
+      if flags & FLAG_TIMESTAMP > 0
+        timestamp = io.read_timestamp
+        raise ::IO::EOFError.new unless timestamp
+        @timestamp = timestamp
+      end
+      if flags & FLAG_TYPE > 0
+        type = io.read_shortstr
+        raise ::IO::EOFError.new unless type
+        @type = type
+      end
+      if flags & FLAG_USER_ID > 0
+        user_id = io.read_shortstr
+        raise ::IO::EOFError.new unless user_id
+        @user_id = user_id
+      end
+      if flags & FLAG_APP_ID > 0
+        app_id = io.read_shortstr
+        raise ::IO::EOFError.new unless app_id
+        @app_id = app_id
+      end
+      if flags & FLAG_RESERVED1 > 0
+        reserved1 = io.read_shortstr
+        raise ::IO::EOFError.new unless reserved1
+        @reserved1 = reserved1
+      end
     end
 
     def encode(io)
       flags = 0_u16
-      flags = flags | FLAG_CONTENT_TYPE unless @content_type.empty?
+      flags = flags | FLAG_CONTENT_TYPE     unless @content_type.empty?
       flags = flags | FLAG_CONTENT_ENCODING unless @content_encoding.empty?
-      flags = flags | FLAG_HEADERS unless @headers.empty?
-      flags = flags | FLAG_DELIVERY_MODE unless @delivery_mode == 0
-      flags = flags | FLAG_PRIORITY unless @priority == 0
-      flags = flags | FLAG_CORRELATION_ID unless @correlation_id.empty?
-      flags = flags | FLAG_REPLY_TO unless @reply_to.empty?
-      flags = flags | FLAG_EXPIRATION unless @expiration.empty?
-      flags = flags | FLAG_MESSAGE_ID unless @message_id.empty?
-      flags = flags | FLAG_TIMESTAMP unless @timestamp.ticks == 0
-      flags = flags | FLAG_TYPE unless @type.empty?
-      flags = flags | FLAG_USER_ID unless @user_id.empty?
-      flags = flags | FLAG_APP_ID unless @app_id.empty?
-      flags = flags | FLAG_RESERVED1 unless @reserved1.empty?
+      flags = flags | FLAG_HEADERS          unless @headers.empty?
+      flags = flags | FLAG_DELIVERY_MODE    unless @delivery_mode == 0
+      flags = flags | FLAG_PRIORITY         unless @priority == 0
+      flags = flags | FLAG_CORRELATION_ID   unless @correlation_id.empty?
+      flags = flags | FLAG_REPLY_TO         unless @reply_to.empty?
+      flags = flags | FLAG_EXPIRATION       unless @expiration.empty?
+      flags = flags | FLAG_MESSAGE_ID       unless @message_id.empty?
+      flags = flags | FLAG_TIMESTAMP        unless @timestamp.ticks == 0
+      flags = flags | FLAG_TYPE             unless @type.empty?
+      flags = flags | FLAG_USER_ID          unless @user_id.empty?
+      flags = flags | FLAG_APP_ID           unless @app_id.empty?
+      flags = flags | FLAG_RESERVED1        unless @reserved1.empty?
 
       io.write_short(flags)
-      io.write_shortstr(@content_type) unless @content_type.empty?
+
+      io.write_shortstr(@content_type)     unless @content_type.empty?
       io.write_shortstr(@content_encoding) unless @content_encoding.empty?
-      io.write_table(@headers) unless @headers.empty?
-      io.write_octet(@delivery_mode) unless @delivery_mode == 0
-      io.write_octet(@property) unless @property == 0
-      io.write_shortstr(@correlation_id) unless @correlation_id.empty?
-      io.write_shortstr(@reply_to) unless @reply_to.empty?
-      io.write_shortstr(@expiration) unless @expiration.empty?
-      io.write_shortstr(@message_id) unless @message_id.empty?
-      io.write_timestamp(@timestamp) unless @timestamp.empty?
-      io.write_shortstr(@type) unless @type.empty?
-      io.write_shortstr(@user_id) unless @user_id.empty?
-      io.write_shortstr(@app_id) unless @app_id.empty?
-      io.write_shortstr(@reserved1) unless @reserved1.empty?
+      io.write_table(@headers)             unless @headers.empty?
+      io.write_octet(@delivery_mode.to_u8) unless @delivery_mode == 0
+      io.write_octet(@priority.to_u8)      unless @priority == 0
+      io.write_shortstr(@correlation_id)   unless @correlation_id.empty?
+      io.write_shortstr(@reply_to)         unless @reply_to.empty?
+      io.write_shortstr(@expiration)       unless @expiration.empty?
+      io.write_shortstr(@message_id)       unless @message_id.empty?
+      io.write_timestamp(@timestamp)       unless @timestamp.ticks == 0
+      io.write_shortstr(@type)             unless @type.empty?
+      io.write_shortstr(@user_id)          unless @user_id.empty?
+      io.write_shortstr(@app_id)           unless @app_id.empty?
+      io.write_shortstr(@reserved1)        unless @reserved1.empty?
     end
   end
 
@@ -205,11 +270,16 @@ module AMQP::Protocol
     end
 
     def to_s(io)
-      io << "MethodFrame: " << @method
+      io << "MethodFrame(#{@channel}): " << @method
     end
   end
 
   class HeaderFrame < Frame
+    getter cls_id
+    getter weight
+    getter body_size
+    getter properties
+
     def initialize(@channel, @cls_id, @weight, @body_size)
       @type = HEADERS
       @properties = Properties.new
@@ -242,12 +312,14 @@ module AMQP::Protocol
     end
 
     def to_s(io)
-      io << "HeaderFrame: " << "cls_id: #{@cls_id}, weight: #{@weight}, body_size: #{@body_size}"
+      io << "HeaderFrame(#{@channel}): " << "cls_id: #{@cls_id}, weight: #{@weight}, body_size: #{@body_size}"
       io << ", properties: #{@properties}"
     end
   end
 
   class BodyFrame < Frame
+    getter body
+
     def initialize(@channel, @body)
       @type = BODY
     end
@@ -265,7 +337,7 @@ module AMQP::Protocol
     end
 
     def to_s(io)
-      io << "BodyFrame: " << @body
+      io << "BodyFrame(#{@channel}): " << @body
     end
   end
 
@@ -290,7 +362,7 @@ module AMQP::Protocol
     end
 
     def to_s(io)
-      io << "HeartbeatFrame"
+      io << "HeartbeatFrame(#{@channel})"
     end
   end
 

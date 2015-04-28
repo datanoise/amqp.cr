@@ -36,15 +36,20 @@ module AMQP
     def initialize(@config = Config.new)
       @rpc = ::Channel(Protocol::Method).new
       @broker = Broker.new(@config)
+      @close = ::Channel(Bool).new
     end
 
     def self.start(config = Config.new)
       conn = Connection.new(config)
       conn.handshake
       yield conn
+      conn.run_loop
+    end
+
+    protected def run_loop
       loop do
-        break if conn.closed
-        sleep 1
+        break if closed
+        @close.receive(1.seconds)
       end
     end
 
@@ -132,6 +137,7 @@ module AMQP
       @broker.send(ConnectionChannelID, open)
       open_ok = @rpc.receive
       assert_type(open_ok, Methods::OpenOk)
+      @broker.on_close { puts "closing"; @close.send(true) }
     end
   end
 end

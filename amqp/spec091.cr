@@ -117,6 +117,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         version_major = io.read_octet
         raise ::IO::EOFError.new unless version_major
@@ -175,6 +179,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         client_properties = io.read_table
         raise ::IO::EOFError.new unless client_properties
@@ -227,6 +235,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         challenge = io.read_longstr
         raise ::IO::EOFError.new unless challenge
@@ -261,6 +273,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         response = io.read_longstr
         raise ::IO::EOFError.new unless response
@@ -293,6 +309,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -341,6 +361,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         channel_max = io.read_short
         raise ::IO::EOFError.new unless channel_max
@@ -385,6 +409,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -436,6 +464,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         reserved_1 = io.read_shortstr
         raise ::IO::EOFError.new unless reserved_1
@@ -468,6 +500,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -520,6 +556,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         CloseOk.new()
       end
@@ -546,6 +586,10 @@ module AMQP::Protocol
       end
 
       def sync?
+        false
+      end
+
+      def has_content?
         false
       end
 
@@ -578,6 +622,10 @@ module AMQP::Protocol
       end
 
       def sync?
+        false
+      end
+
+      def has_content?
         false
       end
 
@@ -615,6 +663,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         reserved_1 = io.read_shortstr
         raise ::IO::EOFError.new unless reserved_1
@@ -649,6 +701,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         reserved_1 = io.read_longstr
         raise ::IO::EOFError.new unless reserved_1
@@ -681,6 +737,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -720,6 +780,10 @@ module AMQP::Protocol
         false
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
@@ -755,6 +819,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -807,6 +875,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         CloseOk.new()
       end
@@ -839,6 +911,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -920,6 +996,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         DeclareOk.new()
       end
@@ -947,6 +1027,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1001,6 +1085,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         DeleteOk.new()
       end
@@ -1028,6 +1116,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1095,6 +1187,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         BindOk.new()
       end
@@ -1122,6 +1218,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1189,6 +1289,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         UnbindOk.new()
       end
@@ -1221,6 +1325,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1298,6 +1406,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         queue = io.read_shortstr
         raise ::IO::EOFError.new unless queue
@@ -1342,6 +1454,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1409,6 +1525,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         BindOk.new()
       end
@@ -1436,6 +1556,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1494,6 +1618,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         UnbindOk.new()
       end
@@ -1521,6 +1649,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1572,6 +1704,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         message_count = io.read_long
         raise ::IO::EOFError.new unless message_count
@@ -1604,6 +1740,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1665,6 +1805,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         message_count = io.read_long
         raise ::IO::EOFError.new unless message_count
@@ -1702,6 +1846,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1751,6 +1899,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         QosOk.new()
       end
@@ -1778,6 +1930,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1856,6 +2012,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         consumer_tag = io.read_shortstr
         raise ::IO::EOFError.new unless consumer_tag
@@ -1888,6 +2048,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -1933,6 +2097,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         consumer_tag = io.read_shortstr
         raise ::IO::EOFError.new unless consumer_tag
@@ -1953,11 +2121,10 @@ module AMQP::Protocol
 
     class Publish < Method
       INDEX = 40_u16
-      CONTENT = true
 
-      getter reserved_1, exchange, routing_key, mandatory, immediate
+      getter reserved_1, exchange, routing_key, mandatory, immediate, properties, payload
 
-      def initialize(@reserved_1, @exchange, @routing_key, @mandatory, @immediate)
+      def initialize(@reserved_1, @exchange, @routing_key, @mandatory, @immediate, @properties, @payload)
       end
 
       def id
@@ -1966,6 +2133,14 @@ module AMQP::Protocol
 
       def sync?
         false
+      end
+
+      def has_content?
+        true
+      end
+
+      def content
+        {@properties, @payload}
       end
 
       def self.decode(io)
@@ -1979,7 +2154,9 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless bits
         mandatory = bits & (1 << 0) == 1
         immediate = bits & (1 << 1) == 1
-        Publish.new(reserved_1, exchange, routing_key, mandatory, immediate)
+        properties = Table.new
+        payload = ""
+        Publish.new(reserved_1, exchange, routing_key, mandatory, immediate, properties, payload)
       end
 
       def encode(io)
@@ -2008,17 +2185,22 @@ module AMQP::Protocol
         io << ", "
         io << "immediate: "
         immediate.inspect(io)
+        io << ", "
+        io << "properties: "
+        properties.inspect(io)
+        io << ", "
+        io << "payload: "
+        payload.inspect(io)
         io << ")"
       end
     end
 
     class Return < Method
       INDEX = 50_u16
-      CONTENT = true
 
-      getter reply_code, reply_text, exchange, routing_key
+      getter reply_code, reply_text, exchange, routing_key, properties, payload
 
-      def initialize(@reply_code, @reply_text, @exchange, @routing_key)
+      def initialize(@reply_code, @reply_text, @exchange, @routing_key, @properties, @payload)
       end
 
       def id
@@ -2027,6 +2209,14 @@ module AMQP::Protocol
 
       def sync?
         false
+      end
+
+      def has_content?
+        true
+      end
+
+      def content
+        {@properties, @payload}
       end
 
       def self.decode(io)
@@ -2038,7 +2228,9 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless exchange
         routing_key = io.read_shortstr
         raise ::IO::EOFError.new unless routing_key
-        Return.new(reply_code, reply_text, exchange, routing_key)
+        properties = Table.new
+        payload = ""
+        Return.new(reply_code, reply_text, exchange, routing_key, properties, payload)
       end
 
       def encode(io)
@@ -2061,17 +2253,22 @@ module AMQP::Protocol
         io << ", "
         io << "routing_key: "
         routing_key.inspect(io)
+        io << ", "
+        io << "properties: "
+        properties.inspect(io)
+        io << ", "
+        io << "payload: "
+        payload.inspect(io)
         io << ")"
       end
     end
 
     class Deliver < Method
       INDEX = 60_u16
-      CONTENT = true
 
-      getter consumer_tag, delivery_tag, redelivered, exchange, routing_key
+      getter consumer_tag, delivery_tag, redelivered, exchange, routing_key, properties, payload
 
-      def initialize(@consumer_tag, @delivery_tag, @redelivered, @exchange, @routing_key)
+      def initialize(@consumer_tag, @delivery_tag, @redelivered, @exchange, @routing_key, @properties, @payload)
       end
 
       def id
@@ -2080,6 +2277,14 @@ module AMQP::Protocol
 
       def sync?
         false
+      end
+
+      def has_content?
+        true
+      end
+
+      def content
+        {@properties, @payload}
       end
 
       def self.decode(io)
@@ -2094,7 +2299,9 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless exchange
         routing_key = io.read_shortstr
         raise ::IO::EOFError.new unless routing_key
-        Deliver.new(consumer_tag, delivery_tag, redelivered, exchange, routing_key)
+        properties = Table.new
+        payload = ""
+        Deliver.new(consumer_tag, delivery_tag, redelivered, exchange, routing_key, properties, payload)
       end
 
       def encode(io)
@@ -2123,6 +2330,12 @@ module AMQP::Protocol
         io << ", "
         io << "routing_key: "
         routing_key.inspect(io)
+        io << ", "
+        io << "properties: "
+        properties.inspect(io)
+        io << ", "
+        io << "payload: "
+        payload.inspect(io)
         io << ")"
       end
     end
@@ -2141,6 +2354,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -2178,11 +2395,10 @@ module AMQP::Protocol
 
     class GetOk < Method
       INDEX = 71_u16
-      CONTENT = true
 
-      getter delivery_tag, redelivered, exchange, routing_key, message_count
+      getter delivery_tag, redelivered, exchange, routing_key, message_count, properties, payload
 
-      def initialize(@delivery_tag, @redelivered, @exchange, @routing_key, @message_count)
+      def initialize(@delivery_tag, @redelivered, @exchange, @routing_key, @message_count, @properties, @payload)
       end
 
       def id
@@ -2191,6 +2407,14 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        true
+      end
+
+      def content
+        {@properties, @payload}
       end
 
       def self.decode(io)
@@ -2205,7 +2429,9 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless routing_key
         message_count = io.read_long
         raise ::IO::EOFError.new unless message_count
-        GetOk.new(delivery_tag, redelivered, exchange, routing_key, message_count)
+        properties = Table.new
+        payload = ""
+        GetOk.new(delivery_tag, redelivered, exchange, routing_key, message_count, properties, payload)
       end
 
       def encode(io)
@@ -2234,6 +2460,12 @@ module AMQP::Protocol
         io << ", "
         io << "message_count: "
         message_count.inspect(io)
+        io << ", "
+        io << "properties: "
+        properties.inspect(io)
+        io << ", "
+        io << "payload: "
+        payload.inspect(io)
         io << ")"
       end
     end
@@ -2252,6 +2484,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -2285,6 +2521,10 @@ module AMQP::Protocol
       end
 
       def sync?
+        false
+      end
+
+      def has_content?
         false
       end
 
@@ -2331,6 +2571,10 @@ module AMQP::Protocol
         false
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         delivery_tag = io.read_longlong
         raise ::IO::EOFError.new unless delivery_tag
@@ -2374,6 +2618,10 @@ module AMQP::Protocol
         false
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
@@ -2408,6 +2656,10 @@ module AMQP::Protocol
       end
 
       def sync?
+        false
+      end
+
+      def has_content?
         false
       end
 
@@ -2446,6 +2698,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         RecoverOk.new()
       end
@@ -2472,6 +2728,10 @@ module AMQP::Protocol
       end
 
       def sync?
+        false
+      end
+
+      def has_content?
         false
       end
 
@@ -2526,6 +2786,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         Select.new()
       end
@@ -2551,6 +2815,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -2580,6 +2848,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         Commit.new()
       end
@@ -2605,6 +2877,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -2634,6 +2910,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         Rollback.new()
       end
@@ -2659,6 +2939,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)
@@ -2695,6 +2979,10 @@ module AMQP::Protocol
         true
       end
 
+      def has_content?
+        false
+      end
+
       def self.decode(io)
         bits = io.read_octet
         raise ::IO::EOFError.new unless bits
@@ -2728,6 +3016,10 @@ module AMQP::Protocol
 
       def sync?
         true
+      end
+
+      def has_content?
+        false
       end
 
       def self.decode(io)

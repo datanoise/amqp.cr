@@ -14,7 +14,9 @@ class AMQP::Broker
     @sends = ::Channel(Time).new(1)
     @closed = false
     @heartbeater_started = false
+    @sending = false
     @consumers = {} of UInt16 => Protocol::Frame+ ->
+    @close_callbacks = [] of ->
   end
 
   def register_consumer(channel_id, &block: Protocol::Frame+ ->)
@@ -27,9 +29,51 @@ class AMQP::Broker
 
   def send(channel, method)
     frame = Protocol::MethodFrame.new(channel, method)
+    if method.has_content?
+      frames = [frame] of Protocol::Frame
+      unless method.responds_to?(:content)
+        raise Protocol::FrameError.new("unable to obtain the method's content")
+      end
+      properties, payload = method.content
+      frames << Protocol::HeaderFrame.new(channel, method.id.first, 0_u16, payload.length.to_u64)
+
+      limit = @config.frame_max - Protocol::FRAME_HEADER_SIZE
+      while payload && !payload.empty?
+        body, payload = payload[0, limit], payload[limit, payload.length - limit]
+        frames << Protocol::BodyFrame.new(channel, body.to_slice)
+      end
+      send_frames(frames)
+    else
+      send_frame(frame)
+    end
+  end
+
+  private def send_frame(frame: Frame)
+    Scheduler.yield while @sending
+    @sending = true
+
+    transmit_frame(frame)
+  ensure
+    @sending = false
+  end
+
+  private def send_frames(frames: Array(Frame))
+    Scheduler.yield while @sending
+    @sending = true
+
+    frames.each {|frame| transmit_frame(frame)}
+  ensure
+    @sending = false
+  end
+
+  private def transmit_frame(frame)
     puts ">> #{frame}"
     frame.encode(@io)
     @sends.send(Time.now) if @heartbeater_started
+  end
+
+  def on_close(&block: ->)
+    @close_callbacks << block
   end
 
   def close
@@ -37,6 +81,7 @@ class AMQP::Broker
     @closed = true
     @sends.send(Time.now)
     @socket.close
+    @close_callbacks.each &.call
   end
 
   def start_reader
@@ -52,12 +97,15 @@ class AMQP::Broker
   private def process_frames
     loop do
       frame = Protocol::Frame.decode(@io)
+      puts "<< #{frame}"
 
       case frame
       when Protocol::MethodFrame
-        on_method(frame)
+        on_frame(frame)
       when Protocol::HeaderFrame
+        on_frame(frame)
       when Protocol::BodyFrame
+        on_frame(frame)
       when Protocol::HeartbeatFrame
         on_heartbeat
       else
@@ -78,8 +126,7 @@ class AMQP::Broker
     close
   end
 
-  private def on_method(frame: Protocol::MethodFrame)
-    puts "<< #{frame}"
+  private def on_frame(frame)
     consumer = @consumers[frame.channel]
     unless consumer
       raise Protocol::FrameError.new("Invalid channel received: #{frame.channel}")
@@ -100,7 +147,7 @@ class AMQP::Broker
         # timeout received, fill the channel with heartbeats
         if Time.now - last_sent > interval
           heartbeat = Protocol::HeartbeatFrame.new
-          heartbeat.encode(@io)
+          send_frame(heartbeat)
         end
       else
         last_sent = send_time

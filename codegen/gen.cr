@@ -111,16 +111,16 @@ module CodeGen
       @fields = fnodes.map do |fnode|
         Field.new(fnode)
       end
+      if @has_content
+        @fields.push ExtraField.new("properties", "table", "Table.new")
+        @fields.push ExtraField.new("payload", "longstr", "\"\"")
+      end
     end
 
     def generate(io, indent)
       iputs "class #{@name} < Method"
       do_indent do
         iputs "INDEX = #{@index}_u16"
-        if @has_content
-          iputs "CONTENT = true"
-        end
-
         unless @fields.empty?
           io.puts
           iputs "getter #{@fields.map(&.name).join(", ")}"
@@ -146,6 +146,22 @@ module CodeGen
         end
         iputs "end"
         io.puts
+
+        iputs "def has_content?"
+        do_indent do
+          iputs @has_content ? "true" : "false"
+        end
+        iputs "end"
+        io.puts
+
+        if @has_content
+          iputs "def content"
+          do_indent do
+            iputs "{@properties, @payload}"
+          end
+          iputs "end"
+          io.puts
+        end
 
         # decode method
         iputs "def self.decode(io)"
@@ -216,9 +232,9 @@ module CodeGen
   class Field
     getter :name
 
-    def initialize(@node)
-      @name = @node["name"].not_nil!.tr("-", "_")
-      @domain = Domain[@node["domain"]? || @node["type"]?]
+    def initialize(node)
+      @name = node["name"].not_nil!.tr("-", "_")
+      @domain = Domain[node["domain"]? || node["type"]?]
     end
 
     def generate_decode(io, indent, bit)
@@ -240,6 +256,19 @@ module CodeGen
 
     def bit?
       @domain.type == "bit"
+    end
+  end
+
+  class ExtraField < Field
+    def initialize(@name, domain, @init)
+      @domain = Domain[domain]
+    end
+
+    def generate_decode(io, indent, bit)
+      iputs "#{@name} = #{@init}"
+    end
+
+    def generate_encode(io, indent, bit)
     end
   end
 
