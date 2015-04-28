@@ -2,16 +2,11 @@ require "../amqp"
 require "signal"
 
 COUNT = 20
+EXCHANGE_NAME = "sender_receiver"
+QUEUE_NAME = "sender_receiver"
 
-conn = AMQP::Connection.new
+conn = AMQP::Connection.new(AMQP::Config.new(logger_level: Logger::DEBUG))
 puts "Started"
-
-Signal.trap(Signal::INT) do
-  puts "Exiting..."
-  spawn do
-    conn.loop_break
-  end
-end
 
 conn.on_close do |code, msg|
   puts "CONNECTION CLOSED: #{code} - #{msg}"
@@ -22,8 +17,8 @@ channel.on_close do |code, msg|
   puts "CHANNEL CLOSED: #{code} - #{msg}"
 end
 
-exchange = channel.direct("my_exchange")
-queue = channel.queue("my_queue")
+exchange = channel.direct(EXCHANGE_NAME)
+queue = channel.queue(QUEUE_NAME)
 queue.bind(exchange, queue.name)
 queue.subscribe do |msg|
   puts "Received msg (1): #{msg.body}"
@@ -36,10 +31,14 @@ end
 
 COUNT.times do
   msg = AMQP::Message.new("test message")
-  exchange.publish(msg, "my_queue")
+  exchange.publish(msg, QUEUE_NAME)
   sleep 0.1
 end
 
+Signal.trap(Signal::INT) do
+  puts "Exiting..."
+  conn.loop_break
+end
 conn.run_loop
 
 queue.delete

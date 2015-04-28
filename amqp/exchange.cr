@@ -9,7 +9,7 @@ class AMQP::Exchange
 
   def initialize(@channel, @name, @type, @durable, @auto_delete, @internal, @args)
     unless BUILTIN_TYPES.includes?(@type)
-      raise "Invalid exchange type"
+      raise "Invalid exchange type: #{@type}"
     end
   end
 

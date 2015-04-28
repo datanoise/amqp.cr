@@ -38,6 +38,10 @@ class AMQP::Channel
     assert_type(open_ok, Protocol::Channel::OpenOk)
   end
 
+  def logger
+    @broker.logger
+  end
+
   def on_flow(&block: Bool ->)
     @flow_callbacks << block
   end
@@ -206,8 +210,7 @@ class AMQP::Channel
           deliver_content
         end
       else
-        # FIXME
-        puts "Invalid state. Haven't received header frame"
+        logger.error "Invalid state. Haven't received header frame first."
       end
     end
   end
@@ -223,8 +226,7 @@ class AMQP::Channel
       msg.key = content_method.routing_key
       subscriber = @subscribers[content_method.consumer_tag]?
       unless subscriber
-        # FIXME
-        puts "no subscriber for consumer_tag #{content_method.consumer_tag} is found"
+        logger.error "No subscriber for consumer_tag #{content_method.consumer_tag} is found"
       else
         subscriber.call(msg)
       end

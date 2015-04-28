@@ -164,7 +164,7 @@ module Timed
     end
 
     def ready?
-      !@value.nil?
+      @closed || !@value.nil?
     end
   end
 end

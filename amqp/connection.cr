@@ -1,3 +1,4 @@
+require "logger"
 require "./macros"
 require "./broker"
 require "./auth"
@@ -9,6 +10,7 @@ module AMQP
     getter username
     getter password
     getter vhost
+    getter logger
     property! channel_max
     property! frame_max
     property! heartbeat
@@ -20,7 +22,10 @@ module AMQP
                    @vhost = "/",
                    @channel_max = 0_u16,
                    @frame_max = 0_u32,
-                   @heartbeat = 0.seconds)
+                   @heartbeat = 0.seconds,
+                   @logger = Logger.new(STDOUT),
+                   @logger_level = Logger::INFO)
+      @logger.level = @logger_level
     end
   end
 

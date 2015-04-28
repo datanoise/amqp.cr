@@ -2,14 +2,14 @@ require "../amqp"
 require "signal"
 
 COUNT = 20
+EXCHANGE_NAME = "basic_get"
+QUEUE_NAME = "basic_get"
 
 AMQP::Connection.start do |conn|
   puts "Started"
   Signal.trap(Signal::INT) do
     puts "Exiting..."
-    spawn do
-      conn.loop_break
-    end
+    conn.loop_break
   end
 
   conn.on_close do |code, msg|
@@ -22,13 +22,13 @@ AMQP::Connection.start do |conn|
       puts "PUBLISH CHANNEL CLOSED: #{code} - #{msg}"
     end
 
-    exchange = channel.exchange("my_exchange", "direct", auto_delete: true)
-    queue = channel.queue("my_queue", auto_delete: true)
+    exchange = channel.exchange(EXCHANGE_NAME, "direct", auto_delete: true)
+    queue = channel.queue(QUEUE_NAME, auto_delete: true)
     queue.bind(exchange, queue.name)
 
     COUNT.times do
       msg = AMQP::Message.new("test message")
-      exchange.publish(msg, "my_queue")
+      exchange.publish(msg, QUEUE_NAME)
       sleep 0.1
     end
   end
@@ -39,8 +39,8 @@ AMQP::Connection.start do |conn|
       puts "GETTER CHANNEL CLOSED: #{code} - #{msg}"
     end
 
-    exchange = channel.exchange("my_exchange", "direct", auto_delete: true)
-    queue = channel.queue("my_queue", auto_delete: true)
+    exchange = channel.exchange(EXCHANGE_NAME, "direct", auto_delete: true)
+    queue = channel.queue(QUEUE_NAME, auto_delete: true)
     queue.bind(exchange, queue.name)
 
     counter = 0

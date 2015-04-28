@@ -68,7 +68,7 @@ class AMQP::Broker
   end
 
   private def transmit_frame(frame)
-    puts ">> #{frame}".colorize.green
+    logger.debug ">> #{frame}".colorize.green
     frame.encode(@io)
     @sends.send(Time.now) if @heartbeater_started
   end
@@ -95,10 +95,14 @@ class AMQP::Broker
     spawn { run_heartbeater }
   end
 
+  def logger
+    @config.logger
+  end
+
   private def process_frames
     loop do
       frame = Protocol::Frame.decode(@io)
-      puts "<< #{frame}".colorize.blue
+      logger.debug "<< #{frame}".colorize.blue
 
       case frame
       when Protocol::MethodFrame
@@ -110,7 +114,7 @@ class AMQP::Broker
       when Protocol::HeartbeatFrame
         on_heartbeat
       else
-        raise Protocol::FrameError.new "Invalid frame type received"
+        logger.error "Invalid frame type received: #{frame}"
       end
     end
   rescue ex: Errno
@@ -129,10 +133,11 @@ class AMQP::Broker
 
   private def on_frame(frame)
     consumer = @consumers[frame.channel]
-    unless consumer
-      raise Protocol::FrameError.new("Invalid channel received: #{frame.channel}")
+    if consumer
+      consumer.call(frame)
+    else
+      logger.error "Invalid channel received: #{frame.channel}"
     end
-    consumer.call(frame)
   end
 
   private def on_heartbeat
