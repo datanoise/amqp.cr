@@ -11,6 +11,7 @@ class AMQP::Queue
     declare = Protocol::Queue::Declare.new(0_u16, @name, passive, @durable, @exclusive, @auto_delete, no_wait, @args)
     declare_ok = @channel.rpc_call(declare)
     assert_type(declare_ok, Protocol::Queue::DeclareOk)
+    @name = declare_ok.queue if @name.empty?
     {declare_ok.message_count, declare_ok.consumer_count}
   end
 
