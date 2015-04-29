@@ -1,6 +1,7 @@
 require "./macros"
 require "./protocol"
 require "./spec091"
+require "./pq"
 
 class AMQP::Channel
   # TODO:implement better channel id allocation algorithm
@@ -25,7 +26,15 @@ class AMQP::Channel
     @exchanges = {} of String => Exchange
     @queues = {} of String => Queue
     @subscribers = {} of String => Message ->
+
     @on_return_callback = -> (code: UInt16, text: String, msg: Message) {}
+
+    # confirm mode attributes
+    @in_confirm_mode = false
+    @on_confirm_ack = -> (delivery_tag: UInt64) {}
+    @on_confirm_nack = -> (delivery_tag: UInt64) {}
+    @pending_confirms = PQ(UInt64).new
+    @publish_counter = 0_u64
 
     # these fields are used to buffer incoming methods with content
     @content_method = nil
@@ -103,6 +112,20 @@ class AMQP::Channel
     queue
   end
 
+  def publish(msg, exchange_name, key, mandatory = false, immediate = false)
+    msg.properties.delivery_mode = 2 if msg.properties.delivery_mode == 0
+    msg.properties.content_type = "application/octet-stream" if msg.properties.content_type.empty?
+    publish = Protocol::Basic::Publish.new(0_u16, exchange_name, key, mandatory, immediate, msg.properties, msg.body)
+    oneway_call(publish)
+
+    if @in_confirm_mode
+      @publish_counter += 1
+      @pending_confirms << @publish_counter
+    end
+
+    self
+  end
+
   def register_subscriber(consumer_tag, block)
     @subscribers[consumer_tag] = block
   end
@@ -117,6 +140,14 @@ class AMQP::Channel
 
   def on_return(&block: UInt16, String, Message ->)
     @on_return_callback = block
+  end
+
+  def on_confirm_ack(&block: UInt64 ->)
+    @on_confirm_ack = block
+  end
+
+  def on_confirm_nack(&block: UInt64 ->)
+    @on_confirm_nack = block
   end
 
   def ack(delivery_tag, multiple = false)
@@ -148,6 +179,34 @@ class AMQP::Channel
     recover = Protocol::Basic::Recover.new(requeue)
     recover_ok = rpc_call(recover)
     assert_type(recover_ok, Protocol::Basic::RecoverOk)
+    self
+  end
+
+  def tx
+    select = Protocol::Tx::Select.new
+    select_ok = rpc_call(select)
+    assert_type(select_ok, Protocol::Tx::SelectOk)
+    self
+  end
+
+  def commit
+    commit = Protocol::Tx::Commit.new
+    commit_ok = rpc_call(commit)
+    assert_type(commit_ok, Protocol::Tx::CommitOk)
+    self
+  end
+
+  def rollback
+    rollback = Protocol::Tx::Rollback.new
+    rollback_ok = rpc_call(rollback)
+    assert_type(rollback_ok, Protocol::Tx::RollbackOk)
+    self
+  end
+
+  def confirm(no_wait = false)
+    confirm = Protocol::Confirm::Select.new(no_wait)
+    select_ok = rpc_call(confirm)
+    assert_type(select_ok, Protocol::Confirm::SelectOk)
     self
   end
 
@@ -199,6 +258,26 @@ class AMQP::Channel
         @subscribers.delete(method.consumer_tag)
         # rabbitmq doesn't implement this method
         # oneway_call(Protocol::Basic::CancelOk.new(method.consumer_tag))
+      when Protocol::Basic::Ack
+        if @in_confirm_mode
+          if method.multiple
+            confirm_multiple(method.delivery_tag, @on_confirm_ack)
+          else
+            confirm_single(method.delivery_tag, @on_confirm_ack)
+          end
+        else
+          logger.error "Received Basic.Ack when confirm mode is off"
+        end
+      when Protocol::Basic::Nack
+        if @in_confirm_mode
+          if method.multiple
+            confirm_multiple(method.delivery_tag, @on_confirm_nack)
+          else
+            confirm_single(method.delivery_tag, @on_confirm_nack)
+          end
+        else
+          logger.error "Received Basic.Nack when confirm mode is off"
+        end
       else
         @rpc.send(method)
       end
@@ -253,5 +332,31 @@ class AMQP::Channel
     @content_method = nil
     @payload = nil
     @header_frame = nil
+  end
+
+  private def confirm_single(delivery_tag, callback)
+    unacked = [] of UInt64
+
+    loop do
+      last = @pending_confirms.pop?
+      break unless last
+      if last != delivery_tag
+        unacked << last
+      else
+        callback.call(delivery_tag)
+        break
+      end
+    end
+
+    unacked.each {|v| @pending_confirms << v}
+  end
+
+  private def confirm_multiple(delivery_tag, callback)
+    loop do
+      last = @pending_confirms.pop?
+      break unless last
+      callback.call(last)
+      break if last == delivery_tag
+    end
   end
 end
