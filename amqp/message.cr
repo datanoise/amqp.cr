@@ -1,4 +1,8 @@
 class AMQP::Message
+
+  TRANSIENT  = 1_u8
+  PERSISTENT = 2_u8
+
   getter! body
   getter! properties
 
