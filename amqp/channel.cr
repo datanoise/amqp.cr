@@ -74,6 +74,7 @@ class AMQP::Channel
 
   def exchange(name, kind, durable = false, auto_delete = false, internal = false,
                no_wait = false, passive = false, args = Protocol::Table.new)
+    name = "" unless name
     unless exchange = @exchanges[name]?
       exchange = Exchange.new(self, name, kind, durable, auto_delete, internal, args)
       exchange.declare(passive: passive, no_wait: no_wait)
@@ -104,6 +105,7 @@ class AMQP::Channel
 
   def queue(name, durable = false, passive = false, exclusive = false,
             auto_delete = false, no_wait = false, args = Protocol::Table.new)
+    name = "" unless name
     unless queue = @queues[name]?
       queue = Queue.new(self, name, durable, exclusive, auto_delete, args)
       queue.declare(passive, no_wait)
