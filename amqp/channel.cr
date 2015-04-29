@@ -74,33 +74,36 @@ class AMQP::Channel
 
   def exchange(name, kind, durable = false, auto_delete = false, internal = false,
                no_wait = false, passive = false, args = Protocol::Table.new)
-    name = "" unless name
     unless exchange = @exchanges[name]?
       exchange = Exchange.new(self, name, kind, durable, auto_delete, internal, args)
-      exchange.declare(passive: passive, no_wait: no_wait)
+      exchange.declare(passive: passive, no_wait: no_wait) unless name.empty?
       @exchanges[name] = exchange
     end
     exchange
   end
 
   def default_exchange
-    @default_exchange ||= Exchange.new("", "direct")
+    @default_exchange ||= direct("")
   end
 
-  def fanout(name)
-    exchange(name, "fanout")
+  def fanout(name, durable = false, auto_delete = false, internal = false,
+             no_wait = false, passive = false, args = Protocol::Table.new)
+    exchange(name, "fanout", durable, auto_delete, internal, no_wait, passive, args)
   end
 
-  def direct(name)
-    exchange(name, "direct")
+  def direct(name, durable = false, auto_delete = false, internal = false,
+               no_wait = false, passive = false, args = Protocol::Table.new)
+    exchange(name, "direct", durable, auto_delete, internal, no_wait, passive, args)
   end
 
-  def topic(name)
-    exchange(name, "topic")
+  def topic(name, durable = false, auto_delete = false, internal = false,
+               no_wait = false, passive = false, args = Protocol::Table.new)
+    exchange(name, "topic", durable, auto_delete, internal, no_wait, passive, args)
   end
 
-  def headers(name)
-    exchange(name, "headers")
+  def headers(name, durable = false, auto_delete = false, internal = false,
+               no_wait = false, passive = false, args = Protocol::Table.new)
+    exchange(name, "headers", durable, auto_delete, internal, no_wait, passive, args)
   end
 
   def queue(name, durable = false, passive = false, exclusive = false,
