@@ -24,8 +24,8 @@ module AMQP
                    @frame_max = 0_u32,
                    @heartbeat = 0.seconds,
                    @logger = Logger.new(STDOUT),
-                   @logger_level = Logger::INFO)
-      @logger.level = @logger_level
+                   @log_level = Logger::INFO)
+      @logger.level = @log_level
     end
   end
 

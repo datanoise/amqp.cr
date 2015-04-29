@@ -1,6 +1,10 @@
 module Timed
   class ChannelError < Exception; end
-  class ChannelClosed < ChannelError; end
+  class ChannelClosed < ChannelError
+    def initialize(msg = "Channel is closed")
+      super(msg)
+    end
+  end
 
   abstract class Channel(T)
     def initialize
