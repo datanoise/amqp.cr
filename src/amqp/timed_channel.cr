@@ -64,7 +64,7 @@ module Timed
       super()
     end
 
-    def send
+    def send(value: Time)
       raise ChannelError.new("not implemented")
     end
 
