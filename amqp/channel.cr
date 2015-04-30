@@ -69,6 +69,7 @@ class AMQP::Channel
     return if @closed
     close_ok = rpc_call(Protocol::Channel::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16))
     assert_type(close_ok, Protocol::Channel::CloseOk)
+    @close_callbacks.each &.call(code.to_u16, msg)
   end
 
   def exchange(name, kind, durable = false, auto_delete = false, internal = false,

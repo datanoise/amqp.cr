@@ -10,7 +10,7 @@ AMQP::Connection.start do |conn|
 
   channel = conn.channel
   channel.on_close do |code, msg|
-    puts "PUBLISH CHANNEL CLOSED: #{code} - #{msg}"
+    puts "CHANNEL CLOSED: #{code} - #{msg}"
   end
 
   exchange = channel.default_exchange
@@ -26,4 +26,6 @@ AMQP::Connection.start do |conn|
     exchange.publish(msg, QUEUE_NAME)
   end
   queue.delete
+  channel.close
 end
+

@@ -39,4 +39,5 @@ AMQP::Connection.start do |conn|
     puts "second transaction failed"
   end
   queue.delete
+  channel.close
 end

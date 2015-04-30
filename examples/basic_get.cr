@@ -26,6 +26,7 @@ AMQP::Connection.start do |conn|
       sleep 0.1
     end
     queue.unbind(exchange, queue.name)
+    channel.close
   end
 
   spawn do
@@ -50,6 +51,7 @@ AMQP::Connection.start do |conn|
     end
     queue.unbind(exchange, queue.name)
     queue.delete
+    channel.close
     conn.loop_break
   end
 
