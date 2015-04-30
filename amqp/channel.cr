@@ -189,6 +189,15 @@ class AMQP::Channel
     self
   end
 
+  def tx
+    tx
+    yield
+    commit
+  rescue ex
+    rollback
+    raise ex
+  end
+
   def commit
     commit = Protocol::Tx::Commit.new
     commit_ok = rpc_call(commit)

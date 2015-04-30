@@ -1,7 +1,7 @@
 require "../amqp"
 require "signal"
 
-QUEUE_NAME = "confirm_mode"
+QUEUE_NAME = "tx_queue"
 
 AMQP::Connection.start(AMQP::Config.new(log_level: Logger::DEBUG)) do |conn|
   puts "Started"
@@ -22,14 +22,27 @@ AMQP::Connection.start(AMQP::Config.new(log_level: Logger::DEBUG)) do |conn|
   exchange = channel.default_exchange
   queue = channel.queue(QUEUE_NAME, auto_delete: true)
 
-  channel.on_confirm do |tag, ack|
-    puts " #{tag} tag #{ack ? "acked" : "nacked"}"
-  end
-  channel.confirm
-
+  channel.tx
   10.times do
     msg = AMQP::Message.new("test message")
     exchange.publish(msg, QUEUE_NAME)
+  end
+  channel.rollback
+
+  if queue.get
+    puts "first transaction failed to rollback"
+  else
+    puts "first transaction worked"
+  end
+
+  channel.tx
+  msg = AMQP::Message.new("test message")
+  exchange.publish(msg, QUEUE_NAME)
+  channel.commit
+  if queue.get
+    puts "second transaction worked"
+  else
+    puts "second transaction failed"
   end
 end
 puts "Finished"
