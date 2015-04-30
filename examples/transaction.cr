@@ -1,5 +1,4 @@
 require "../amqp"
-require "signal"
 
 QUEUE_NAME = "tx_queue"
 

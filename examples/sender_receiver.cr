@@ -1,5 +1,4 @@
 require "../amqp"
-require "signal"
 
 COUNT = 20
 EXCHANGE_NAME = "sender_receiver"
