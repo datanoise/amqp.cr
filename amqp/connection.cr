@@ -1,4 +1,5 @@
 require "logger"
+require "./errors"
 require "./macros"
 require "./broker"
 require "./auth"
@@ -39,8 +40,14 @@ module AMQP
     def initialize(@config = Config.new)
       @rpc = Timed::Channel(Protocol::Method).new
       @broker = Broker.new(@config)
-      @close = Timed::Channel(Bool).new
+      @break_loop = Timed::Channel(Bool).new
+
+      # close connection attributes
       @close_callbacks = [] of UInt16, String ->
+      @close_code = 0_u16
+      @close_msg = ""
+      @closed = false
+
       handshake
     end
 
@@ -57,14 +64,14 @@ module AMQP
       @running_loop = true
       loop do
         break if closed
-        break if @close.receive(1.seconds)
+        break if @break_loop.receive(1.seconds)
       end
     ensure
       @running_loop = false
     end
 
     def loop_break
-      @close.send(true) if @running_loop
+      @break_loop.send(true) if @running_loop
     end
 
     def close
@@ -76,7 +83,7 @@ module AMQP
       close_mth = Protocol::Connection::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16)
       close_ok = rpc_call(close_mth)
       assert_type(close_ok, Protocol::Connection::CloseOk)
-      @close_callbacks.each &.call(code.to_u16, msg)
+      @close_code, @close_msg = code.to_u16, msg
       do_close
     end
 
@@ -89,8 +96,12 @@ module AMQP
     end
 
     private def do_close
-      @broker.close unless @broker.closed
+      return if @closed
+      @closed = true
+
+      @broker.close
       @rpc.close
+      @close_callbacks.each &.call(@close_code, @close_msg)
       loop_break
     end
 
@@ -110,13 +121,35 @@ module AMQP
       self
     end
 
+    def queue_exists?(name)
+      ch = channel
+      ch.queue(name, passive: true)
+      ch.close
+      return true
+    rescue ChannelClosed
+      return false
+    end
+
+    def exchange_exists?(name)
+      ch = channel
+      ch.exchange(name, passive: true)
+      ch.close
+      return true
+    rescue ChannelClosed
+      return false
+    end
+
     private def oneway_call(method)
       @broker.send(ConnectionChannelID, method)
+    rescue Timed::ChannelClosed
+      raise ConnectionClosed.new(@close_code, @close_msg)
     end
 
     private def rpc_call(method)
       oneway_call(method)
       @rpc.receive
+    rescue Timed::ChannelClosed
+      raise ConnectionClosed.new(@close_code, @close_msg)
     end
 
     private def register_consumer
@@ -126,10 +159,10 @@ module AMQP
           method = frame.method
           case method
           when Protocol::Connection::Close
+            @close_code, @close_msg = method.reply_code, method.reply_text
             close_ok = Protocol::Connection::CloseOk.new
             @broker.send(frame.channel, close_ok)
             @broker.close
-            @close_callbacks.each &.call(method.reply_code, method.reply_text)
           else
             @rpc.send(frame.method)
           end
@@ -137,6 +170,7 @@ module AMQP
           raise Protocol::FrameError.new("Unexpected frame: #{frame}")
         end
       end
+      @broker.on_close { do_close }
     end
 
     protected def handshake
@@ -186,7 +220,6 @@ module AMQP
       @broker.send(ConnectionChannelID, open)
       open_ok = @rpc.receive
       assert_type(open_ok, Protocol::Connection::OpenOk)
-      @broker.on_close { do_close }
     end
   end
 end

@@ -1,3 +1,4 @@
+require "./errors"
 require "./macros"
 require "./protocol"
 require "./spec091"
@@ -21,8 +22,6 @@ class AMQP::Channel
     @rpc = Timed::Channel(Protocol::Method).new
     @msg = Timed::Channel(Message).new(1)
     @flow_callbacks = [] of Bool ->
-    @close_callbacks = [] of UInt16, String ->
-    @closed = false
     @exchanges = {} of String => Exchange
     @queues = {} of String => Queue
     @subscribers = {} of String => Message ->
@@ -39,6 +38,12 @@ class AMQP::Channel
     @content_method = nil
     @payload = nil
     @header_frame = nil
+
+    # close channel attributes
+    @close_callbacks = [] of UInt16, String ->
+    @close_code = 0_u16
+    @close_msg = ""
+    @closed = false
 
     register
     open = Protocol::Channel::Open.new("")
@@ -69,7 +74,8 @@ class AMQP::Channel
     return if @closed
     close_ok = rpc_call(Protocol::Channel::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16))
     assert_type(close_ok, Protocol::Channel::CloseOk)
-    @close_callbacks.each &.call(code.to_u16, msg)
+    @close_code, @close_msg = code.to_u16, msg
+    do_close
   end
 
   def exchange(name, kind, durable = false, auto_delete = false, internal = false,
@@ -225,6 +231,8 @@ class AMQP::Channel
     return if @closed
     @closed = true
 
+    @close_callbacks.each &.call(@close_code, @close_msg)
+
     @msg.close
     @rpc.close
     @broker.unregister_consumer(@channel_id)
@@ -233,10 +241,14 @@ class AMQP::Channel
   def rpc_call(method)
     oneway_call(method)
     @rpc.receive
+  rescue Timed::ChannelClosed
+    raise ChannelClosed.new(@close_code, @close_msg)
   end
 
   def oneway_call(method)
     @broker.send(@channel_id, method)
+  rescue Timed::ChannelClosed
+    raise ChannelClosed.new(@close_code, @close_msg)
   end
 
   private def register
@@ -263,7 +275,7 @@ class AMQP::Channel
         @flow_callbacks.each &.call(method.active)
       when Protocol::Channel::Close
         oneway_call(Protocol::Channel::CloseOk.new)
-        @close_callbacks.each &.call(method.reply_code, method.reply_text)
+        @close_code, @close_msg = method.reply_code, method.reply_text
         do_close
       when Protocol::Basic::Cancel
         @subscribers.delete(method.consumer_tag)
