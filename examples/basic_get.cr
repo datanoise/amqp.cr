@@ -1,4 +1,4 @@
-require "../amqp"
+require "../src/amqp"
 require "signal"
 
 COUNT = 20

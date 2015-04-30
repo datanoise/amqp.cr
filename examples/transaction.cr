@@ -1,4 +1,4 @@
-require "../amqp"
+require "../src/amqp"
 
 QUEUE_NAME = "tx_queue"
 
