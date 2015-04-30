@@ -31,8 +31,7 @@ class AMQP::Channel
 
     # confirm mode attributes
     @in_confirm_mode = false
-    @on_confirm_ack = -> (delivery_tag: UInt64) {}
-    @on_confirm_nack = -> (delivery_tag: UInt64) {}
+    @on_confirm_callback = -> (delivery_tag: UInt64, ack: Bool) {}
     @pending_confirms = PQ(UInt64).new
     @publish_counter = 0_u64
 
@@ -147,12 +146,8 @@ class AMQP::Channel
     @on_return_callback = block
   end
 
-  def on_confirm_ack(&block: UInt64 ->)
-    @on_confirm_ack = block
-  end
-
-  def on_confirm_nack(&block: UInt64 ->)
-    @on_confirm_nack = block
+  def on_confirm(&block: UInt64, Bool ->)
+    @on_confirm_callback = block
   end
 
   def ack(delivery_tag, multiple = false)
@@ -212,6 +207,7 @@ class AMQP::Channel
     confirm = Protocol::Confirm::Select.new(no_wait)
     select_ok = rpc_call(confirm)
     assert_type(select_ok, Protocol::Confirm::SelectOk)
+    @in_confirm_mode = true
     self
   end
 
@@ -266,9 +262,9 @@ class AMQP::Channel
       when Protocol::Basic::Ack
         if @in_confirm_mode
           if method.multiple
-            confirm_multiple(method.delivery_tag, @on_confirm_ack)
+            confirm_multiple(method.delivery_tag, true)
           else
-            confirm_single(method.delivery_tag, @on_confirm_ack)
+            confirm_single(method.delivery_tag, true)
           end
         else
           logger.error "Received Basic.Ack when confirm mode is off"
@@ -276,9 +272,9 @@ class AMQP::Channel
       when Protocol::Basic::Nack
         if @in_confirm_mode
           if method.multiple
-            confirm_multiple(method.delivery_tag, @on_confirm_nack)
+            confirm_multiple(method.delivery_tag, false)
           else
-            confirm_single(method.delivery_tag, @on_confirm_nack)
+            confirm_single(method.delivery_tag, false)
           end
         else
           logger.error "Received Basic.Nack when confirm mode is off"
@@ -339,7 +335,7 @@ class AMQP::Channel
     @header_frame = nil
   end
 
-  private def confirm_single(delivery_tag, callback)
+  private def confirm_single(delivery_tag, ack)
     unacked = [] of UInt64
 
     loop do
@@ -348,7 +344,7 @@ class AMQP::Channel
       if last != delivery_tag
         unacked << last
       else
-        callback.call(delivery_tag)
+        @on_confirm_callback.call(delivery_tag, ack)
         break
       end
     end
@@ -356,11 +352,11 @@ class AMQP::Channel
     unacked.each {|v| @pending_confirms << v}
   end
 
-  private def confirm_multiple(delivery_tag, callback)
+  private def confirm_multiple(delivery_tag, ack)
     loop do
       last = @pending_confirms.pop?
       break unless last
-      callback.call(last)
+      @on_confirm_callback.call(last, ack)
       break if last == delivery_tag
     end
   end
