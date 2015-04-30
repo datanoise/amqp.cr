@@ -17,6 +17,14 @@ describe "Timed::Channel" do
       end
     end
 
+    it "should be able to cloe timer channel" do
+      timer = Timed::TimerChannel.new(10.milliseconds)
+      timer.close
+      expect_raises(Timed::ChannelClosed) do
+        timer.receive
+      end
+    end
+
     it "should time out Channel.select" do
       timer = Timed::TimerChannel.new(5.milliseconds)
       ch = Timed::Channel(Bool).new

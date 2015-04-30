@@ -77,8 +77,8 @@ module Timed
 
     def receive
       until ready?
-        unwait
         raise ChannelClosed.new if @closed
+        unwait
 
         wait
         Scheduler.reschedule
