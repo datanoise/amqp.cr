@@ -6,12 +6,6 @@ EXCHANGE_NAME = "basic_get"
 QUEUE_NAME = "basic_get"
 
 AMQP::Connection.start do |conn|
-  puts "Started"
-  Signal.trap(Signal::INT) do
-    puts "Exiting..."
-    conn.loop_break
-  end
-
   conn.on_close do |code, msg|
     puts "CONNECTION CLOSED: #{code} - #{msg}"
   end
@@ -23,7 +17,7 @@ AMQP::Connection.start do |conn|
     end
 
     exchange = channel.exchange(EXCHANGE_NAME, "direct", auto_delete: true)
-    queue = channel.queue(QUEUE_NAME, auto_delete: true)
+    queue = channel.queue(QUEUE_NAME)
     queue.bind(exchange, queue.name)
 
     COUNT.times do
@@ -31,6 +25,7 @@ AMQP::Connection.start do |conn|
       exchange.publish(msg, QUEUE_NAME)
       sleep 0.1
     end
+    queue.unbind(exchange, queue.name)
   end
 
   spawn do
@@ -40,7 +35,7 @@ AMQP::Connection.start do |conn|
     end
 
     exchange = channel.exchange(EXCHANGE_NAME, "direct", auto_delete: true)
-    queue = channel.queue(QUEUE_NAME, auto_delete: true)
+    queue = channel.queue(QUEUE_NAME)
     queue.bind(exchange, queue.name)
 
     counter = 0
@@ -53,7 +48,14 @@ AMQP::Connection.start do |conn|
       break if counter == COUNT
       sleep 0.5
     end
+    queue.unbind(exchange, queue.name)
+    queue.delete
+    conn.loop_break
   end
 
+  Signal.trap(Signal::INT) do
+    puts "Exiting..."
+    conn.loop_break
+  end
+  conn.run_loop
 end
-puts "Finished"

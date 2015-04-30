@@ -3,13 +3,7 @@ require "signal"
 
 QUEUE_NAME = "confirm_mode"
 
-AMQP::Connection.start(AMQP::Config.new(log_level: Logger::DEBUG)) do |conn|
-  puts "Started"
-  Signal.trap(Signal::INT) do
-    puts "Exiting..."
-    conn.loop_break
-  end
-
+AMQP::Connection.start do |conn|
   conn.on_close do |code, msg|
     puts "CONNECTION CLOSED: #{code} - #{msg}"
   end
@@ -31,5 +25,5 @@ AMQP::Connection.start(AMQP::Config.new(log_level: Logger::DEBUG)) do |conn|
     msg = AMQP::Message.new("test message")
     exchange.publish(msg, QUEUE_NAME)
   end
+  queue.delete
 end
-puts "Finished"

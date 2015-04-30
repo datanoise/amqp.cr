@@ -46,9 +46,11 @@ module AMQP
 
     def self.start(config = Config.new)
       conn = Connection.new(config)
-      yield conn
-      conn.run_loop
-      conn.close
+      begin
+        yield conn
+      ensure
+        conn.close
+      end
     end
 
     def run_loop
