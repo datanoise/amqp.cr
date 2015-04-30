@@ -36,6 +36,7 @@ module AMQP
     ConnectionChannelID = 0_u16
 
     getter config
+    getter closed
 
     def initialize(@config = Config.new)
       @rpc = Timed::Channel(Protocol::Method).new
@@ -85,10 +86,6 @@ module AMQP
       assert_type(close_ok, Protocol::Connection::CloseOk)
       @close_code, @close_msg = code.to_u16, msg
       do_close
-    end
-
-    def closed
-      @broker.closed
     end
 
     def on_close(&block: UInt16, String ->)
@@ -193,7 +190,7 @@ module AMQP
       auth = Auth.get_authenticator(start.mechanisms)
 
       start_ok = Protocol::Connection::StartOk.new(
-        client_properties, "PLAIN", auth.response(@config.username, @config.password), "")
+        client_properties, auth.mechanism, auth.response(@config.username, @config.password), "")
       @broker.send(ConnectionChannelID, start_ok)
 
       tune = @rpc.receive
