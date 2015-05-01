@@ -1,3 +1,7 @@
+# Extended the channel implementation from the standard library by adding
+# channel closing functionality and an ability to receive from channel with a
+# timeout.
+#
 module Timed
   class ChannelError < Exception; end
   class ChannelClosed < ChannelError

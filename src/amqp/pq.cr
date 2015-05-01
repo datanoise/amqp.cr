@@ -1,3 +1,5 @@
+# A simple implementation of a priority queue.
+#
 class PQ(T)
   def initialize
     @graph = [] of T

@@ -5,15 +5,26 @@ require "./broker"
 require "./auth"
 
 module AMQP
+  # Provides settings used to establish a connection to an AMQP server.
   class Config
+    # The server host name
     getter host
+    # The server port
     getter port
+    # The server user name
     getter username
+    # The server password
     getter password
+    # Provides the name of the virtual host
     getter vhost
+    # Logger to use
     getter logger
+    # Defines the maximum number of channels for the connection
     property! channel_max
+    # Defines the maximum length of a frame in bytes. Default is 0, which is unlimited.
+    # This value sill could be limited by the server.
     property! frame_max
+    # A number of seconds of inactivity before sending a heartbeat frame.
     property! heartbeat
 
     def initialize(@host = "127.0.0.1",
@@ -28,8 +39,13 @@ module AMQP
                    @log_level = Logger::INFO)
       @logger.level = @log_level
     end
+
+    def log_level=(level)
+      @logger.level = level
+    end
   end
 
+  # The connection class provides methods to establish a network connection to a server.
   class Connection
     DefaultProduct = "http://github.com/datanoise/amqp.cr"
     DefaultVersion = "0.1"
@@ -52,6 +68,14 @@ module AMQP
       handshake
     end
 
+    # Establishes a connection to the server and passes it to the provided block.
+    #
+    # ```
+    # AMQP::Connection.start do |conn|
+    #   channel = conn.channel
+    #   ...
+    # end
+    # ```
     def self.start(config = Config.new)
       conn = Connection.new(config)
       begin
@@ -61,6 +85,16 @@ module AMQP
       end
     end
 
+    # Enters a processing loop which prevents the program termination. Useful when
+    # subscribing to message queues.
+    #
+    # ```
+    # AMQP::Connection.start do |conn|
+    #   channel = conn.channel
+    #   ...
+    #   conn.run_loop
+    # end
+    # ```
     def run_loop
       @running_loop = true
       loop do
@@ -71,14 +105,27 @@ module AMQP
       @running_loop = false
     end
 
+    # Breaks from the run loop
+    #
+    # ```
+    # require 'signal'
+    # AMQP::Connection.start do |conn|
+    #   channel = conn.channel
+    #   ...
+    #   trap(INT) { conn.loop_break }
+    #   conn.run_loop
+    # end
+    # ```
     def loop_break
       @break_loop.send(true) if @running_loop
     end
 
+    # Closes the connection to a server
     def close
       close(Protocol::REPLY_SUCCESS, "bye")
     end
 
+    # Closes the connection to a server by providing error code and message.
     def close(code, msg, cls_id = 0, mth_id = 0)
       return if closed
       close_mth = Protocol::Connection::Close.new(code.to_u16, msg, cls_id.to_u16, mth_id.to_u16)
@@ -88,6 +135,7 @@ module AMQP
       do_close
     end
 
+    # Registers the callback to be invoked in case when the connection is closed.
     def on_close(&block: UInt16, String ->)
       @close_callbacks.unshift block
     end
@@ -102,22 +150,26 @@ module AMQP
       loop_break
     end
 
+    # Creates a new channel.
     def channel
       Channel.new(@broker)
     end
 
+    # This method indicates that a connection has been blocked and does not accept new publishes.
     def block(reason)
       block = Protocol::Connection::Blocked.new(reason)
       oneway_call(block)
       self
     end
 
+    # This method indicates that a connection has been unblocked and now accepts publishes.
     def unblock
       unblock = Protocol::Connection::Unblocked.new
       oneway_call(unblock)
       self
     end
 
+    # Checks the existence of a queue.
     def queue_exists?(name)
       ch = channel
       ch.queue(name, passive: true)
@@ -127,6 +179,7 @@ module AMQP
       return false
     end
 
+    # Checks the existence of an exchange.
     def exchange_exists?(name)
       ch = channel
       ch.exchange(name, passive: true)
