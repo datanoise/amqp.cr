@@ -216,6 +216,7 @@ module AMQP::Protocol
       io.write_long(payload.length.to_u32)
       io.write(payload)
       io.write_octet(FINAL_OCTET)
+      io.flush
     end
 
     def self.decode(io)
@@ -225,22 +226,26 @@ module AMQP::Protocol
       raise ::IO::EOFError.new unless channel
       size = io.read_long
       raise ::IO::EOFError.new unless size
-      frame = case ty
-              when METHOD
-                MethodFrame.parse(channel, size, io)
-              when HEADERS
-                HeaderFrame.parse(channel, size, io)
-              when BODY
-                BodyFrame.parse(channel, size, io)
-              when HEARTBEAT
-                HeartbeatFrame.parse(channel, size, io)
-              else
-                raise FrameError.new "Invalid frame type: #{ty}"
-              end
+      body = Slice(UInt8).new(size.to_i32)
+      io.read(body)
+      raise ::IO::EOFError.new if io.eof
       final = io.read_octet
       unless final == FINAL_OCTET
         raise FrameError.new "Final octet doesn't match"
       end
+      body_io = IO.new(StringIO.new(String.new body))
+      frame = case ty
+              when METHOD
+                MethodFrame.parse(channel, size, body_io)
+              when HEADERS
+                HeaderFrame.parse(channel, size, body_io)
+              when BODY
+                BodyFrame.parse(channel, size, body_io)
+              when HEARTBEAT
+                HeartbeatFrame.parse(channel, size, body_io)
+              else
+                raise FrameError.new "Invalid frame type: #{ty}"
+              end
       frame
     end
 
@@ -422,6 +427,8 @@ module AMQP::Protocol
         if read_bytes == 0
           @eof = true
           return false
+        elsif read_bytes < 0
+          raise Errno.new("Protocol ERROR")
         end
         count -= read_bytes
         slice += read_bytes
@@ -667,6 +674,10 @@ module AMQP::Protocol
       spec = LibC::TimeSpec.new
       spec.tv_sec = tv_sec
       Time.new(spec)
+    end
+
+    def flush
+      @io.flush
     end
 
     protected def read_byte_array
