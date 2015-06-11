@@ -428,7 +428,7 @@ module AMQP::Protocol
           @eof = true
           return false
         elsif read_bytes < 0
-          raise Errno.new("Protocol ERROR")
+          raise Errno.new("IO ERROR")
         end
         count -= read_bytes
         slice += read_bytes
