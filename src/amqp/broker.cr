@@ -49,7 +49,7 @@ class AMQP::Broker
     end
   end
 
-  private def send_frame(frame: Frame)
+  private def send_frame(frame: Protocol::Frame)
     Scheduler.yield while @sending
     @sending = true
 
@@ -58,7 +58,7 @@ class AMQP::Broker
     @sending = false
   end
 
-  private def send_frames(frames: Array(Frame))
+  private def send_frames(frames: Array(Protocol::Frame))
     Scheduler.yield while @sending
     @sending = true
 
