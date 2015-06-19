@@ -11,6 +11,7 @@ class AMQP::Broker
 
   def initialize(@config)
     @socket = TCPSocket.new(@config.host, @config.port)
+    @socket.sync = true
     @io = Protocol::IO.new(@socket)
     @sends = Timed::Channel(Time).new(1)
     @closed = false
