@@ -1,5 +1,6 @@
 require "../src/amqp"
 
+STDOUT.sync = true
 QUEUE_NAME = "tx_queue"
 
 AMQP::Connection.start do |conn|

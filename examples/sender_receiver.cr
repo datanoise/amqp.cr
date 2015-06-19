@@ -3,6 +3,7 @@ require "../src/amqp"
 COUNT = 20
 EXCHANGE_NAME = "sender_receiver"
 QUEUE_NAME = "sender_receiver"
+STDOUT.sync = true
 
 AMQP::Connection.start do |conn|
   conn.on_close do |code, msg|

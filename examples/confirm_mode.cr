@@ -2,6 +2,7 @@ require "../src/amqp"
 require "signal"
 
 QUEUE_NAME = "confirm_mode"
+STDOUT.sync = true
 
 AMQP::Connection.start do |conn|
   conn.on_close do |code, msg|

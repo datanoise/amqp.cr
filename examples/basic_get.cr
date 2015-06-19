@@ -1,9 +1,10 @@
-require "../src/amqp"
 require "signal"
+require "../src/amqp"
 
 COUNT = 20
 EXCHANGE_NAME = "basic_get"
 QUEUE_NAME = "basic_get"
+STDOUT.sync = true
 
 AMQP::Connection.start do |conn|
   conn.on_close do |code, msg|
@@ -55,7 +56,7 @@ AMQP::Connection.start do |conn|
     conn.loop_break
   end
 
-  Signal.trap(Signal::INT) do
+  Signal::INT.trap do
     puts "Exiting..."
     conn.loop_break
   end
