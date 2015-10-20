@@ -213,7 +213,7 @@ module AMQP::Protocol
       io.write_octet(@type)
       io.write_short(@channel)
       payload = get_payload()
-      io.write_long(payload.length.to_u32)
+      io.write_long(payload.size.to_u32)
       io.write(payload)
       io.write_octet(FINAL_OCTET)
       io.flush
@@ -233,7 +233,7 @@ module AMQP::Protocol
       unless final == FINAL_OCTET
         raise FrameError.new "Final octet doesn't match"
       end
-      body_io = IO.new(StringIO.new(String.new body))
+      body_io = IO.new(MemoryIO.new(String.new body))
       frame = case ty
               when METHOD
                 MethodFrame.parse(channel, size, body_io)
@@ -249,7 +249,7 @@ module AMQP::Protocol
       frame
     end
 
-    abstract def get_payload: Slice(UInt8)
+    abstract def get_payload : Slice(UInt8)
   end
 
   class MethodFrame < Frame
@@ -267,7 +267,7 @@ module AMQP::Protocol
     end
 
     def get_payload
-      buf = StringIO.new
+      buf = MemoryIO.new
       buf_io = IO.new(buf)
       @method.id.each {|v| buf_io.write_short(v)}
       @method.encode(buf_io)
@@ -303,7 +303,7 @@ module AMQP::Protocol
     end
 
     def get_payload
-      buf = StringIO.new
+      buf = MemoryIO.new
       io = IO.new(buf)
       io.write_short(@cls_id)
       io.write_short(@weight)
@@ -404,7 +404,7 @@ module AMQP::Protocol
     end
 
     macro def_write(type)
-      def write_{{type.id.downcase}}(v: {{type.id}})
+      def write_{{type.id.downcase}}(v : {{type.id}})
         write(v)
       end
     end
@@ -419,11 +419,11 @@ module AMQP::Protocol
     def_read(Float32)
     def_read(Float64)
 
-    def read(slice: Slice(UInt8))
+    def read(slice : Slice(UInt8))
       raise ::IO::EOFError.new if @eof
-      count = slice.length
+      count = slice.size
       while count > 0
-        read_bytes = @io.read(slice, count)
+        read_bytes = @io.read(slice)
         if read_bytes == 0
           @eof = true
           return false
@@ -477,7 +477,7 @@ module AMQP::Protocol
       str = read_longstr
       return nil unless str
       return table if str.empty?
-      io = IO.new(StringIO.new(str))
+      io = IO.new(MemoryIO.new(str))
       loop do
         key = io.read_shortstr
         break unless key
@@ -528,13 +528,13 @@ module AMQP::Protocol
       end
     end
 
-    def write(slice: Slice(UInt8))
+    def write(slice : Slice(UInt8))
       @io.write(slice)
     end
 
     def write(v)
       slice = Slice.new(pointerof(v) as Pointer(UInt8), sizeof(typeof(v)))
-      if slice.length > 1 && !@@bigendian
+      if slice.size > 1 && !@@bigendian
         reverse(slice)
       end
       write(slice)
@@ -550,27 +550,27 @@ module AMQP::Protocol
      def_write(Float32)
      def_write(Float64)
 
-     def write_octet(v: UInt8)
+     def write_octet(v : UInt8)
        write(v)
      end
 
-     def write_octet(v: Char)
+     def write_octet(v : Char)
        write(v.ord.to_u8)
      end
 
-     def write_short(v: UInt16)
+     def write_short(v : UInt16)
        write(v)
      end
 
-     def write_long(v: UInt32)
+     def write_long(v : UInt32)
        write(v)
      end
 
-     def write_longlong(v: UInt64)
+     def write_longlong(v : UInt64)
        write(v)
      end
 
-     def write_shortstr(v: String)
+     def write_shortstr(v : String)
        len = v.bytesize.to_u8
        if len < v.bytesize
          raise ContentTooLarge.new
@@ -579,14 +579,14 @@ module AMQP::Protocol
        @io.print(v)
      end
 
-     def write_longstr(v: String)
+     def write_longstr(v : String)
        len = v.bytesize.to_u32
        write(len)
        @io.print(v)
      end
 
-     def write_table(table: Table)
-       buf = StringIO.new
+     def write_table(table : Table)
+       buf = MemoryIO.new
        io = IO.new(buf)
        table.each do |key, value|
          io.write_shortstr(key)
@@ -595,8 +595,8 @@ module AMQP::Protocol
        write_longstr(buf.to_s)
      end
 
-     def write_timestamp(v: Time)
-       write(v.to_i.to_i64)
+     def write_timestamp(v : Time)
+       write(v.epoch.to_i64)
      end
 
      protected def write_field(field)
@@ -626,11 +626,11 @@ module AMQP::Protocol
          write_longstr(field)
        when Array(UInt8)
          write_octet('x')
-         write(field.length.to_i32)
-         @io.write(Slice.new(field.buffer, field.length))
+         write(field.size.to_i32)
+         @io.write(Slice.new(field.buffer, field.size))
        when Array
          write_octet('A')
-         write(field.length.to_i32)
+         write(field.size.to_i32)
          field.each {|v| write_field(v)}
        when Time
          write_octet('T')
@@ -650,7 +650,7 @@ module AMQP::Protocol
       unless read(slice)
         return nil
       end
-      io = IO.new(StringIO.new(String.new(slice)))
+      io = IO.new(MemoryIO.new(String.new(slice)))
       array = [] of Field
       loop do
         field = io.read_field
@@ -692,7 +692,7 @@ module AMQP::Protocol
 
     private def reverse(slice)
       i = 0
-      j = slice.length - 1
+      j = slice.size - 1
       while i < j
         slice.to_unsafe.swap i, j
         i += 1

@@ -136,7 +136,7 @@ module AMQP
     end
 
     # Registers the callback to be invoked in case when the connection is closed.
-    def on_close(&block: UInt16, String ->)
+    def on_close(&block : UInt16, String ->)
       @close_callbacks.unshift block
     end
 
@@ -249,7 +249,7 @@ module AMQP
       tune = @rpc.receive
       assert_type(tune, Protocol::Connection::Tune)
 
-      pick = -> (client: UInt32, server: UInt32) {
+      pick = -> (client : UInt32, server : UInt32) {
         if client == 0 || server == 0
           client > server ? client : server
         else

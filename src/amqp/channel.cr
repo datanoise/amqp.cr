@@ -558,7 +558,7 @@ class AMQP::Channel
       end
     when Protocol::HeaderFrame
       @header_frame = frame
-      @payload = StringIO.new
+      @payload = MemoryIO.new
       if frame.body_size == 0
         deliver_content
       end

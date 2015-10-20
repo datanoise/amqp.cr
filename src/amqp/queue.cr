@@ -129,7 +129,7 @@ class AMQP::Queue
   # @return consumer_tag used to with `unsubscribe` method
   def subscribe(consumer_tag = "", no_local = false, no_ack = false,
                 exclusive = false, no_wait = false, args = Protocol::Table.new,
-                &block: Message ->)
+                &block : Message ->)
     consume = Protocol::Basic::Consume.new(0_u16, @name, consumer_tag, no_local, no_ack, exclusive, no_wait, args)
     consume_ok = @channel.rpc_call(consume)
     assert_type(consume_ok, Protocol::Basic::ConsumeOk)

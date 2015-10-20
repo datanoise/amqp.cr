@@ -62,20 +62,20 @@ module Timed
   end
 
   class TimerChannel < Channel(Time)
-    def initialize(@interval: TimeSpan)
+    def initialize(@interval : Time::Span)
       raise ChannelError.new("invalid timespan") if @interval.ticks == 0
       @start_time = Time.now
       super()
     end
 
-    def send(value: Time)
+    def send(value : Time)
       raise ChannelError.new("not implemented")
     end
 
     def wait
       interval = Time.now - @start_time
       interval = @interval - interval
-      Scheduler.sleep interval.total_seconds
+      Fiber.sleep interval.total_seconds
       super()
     end
 
@@ -136,7 +136,7 @@ module Timed
     end
 
     def full?
-      @queue.length >= @capacity
+      @queue.size >= @capacity
     end
 
     def empty?
