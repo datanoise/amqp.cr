@@ -21,7 +21,7 @@ class AMQP::Broker
     @close_callbacks = [] of ->
   end
 
-  def register_consumer(channel_id, &block: Protocol::Frame+ ->)
+  def register_consumer(channel_id, &block : Protocol::Frame+ ->)
     @consumers[channel_id] = block
   end
 
@@ -37,11 +37,11 @@ class AMQP::Broker
         raise Protocol::FrameError.new("unable to obtain the method's content")
       end
       properties, payload = method.content
-      frames << Protocol::HeaderFrame.new(channel, method.id.first, 0_u16, payload.length.to_u64)
+      frames << Protocol::HeaderFrame.new(channel, method.id.first, 0_u16, payload.size.to_u64)
 
       limit = @config.frame_max - Protocol::FRAME_HEADER_SIZE
       while payload && !payload.empty?
-        body, payload = payload[0, limit], (limit > payload.length ? "" : payload[limit, payload.length - limit])
+        body, payload = payload[0, limit], (limit > payload.size ? "" : payload[limit, payload.size - limit])
         frames << Protocol::BodyFrame.new(channel, body.to_slice)
       end
       send_frames(frames)
@@ -50,9 +50,9 @@ class AMQP::Broker
     end
   end
 
-  private def send_frame(frame: Protocol::Frame)
+  private def send_frame(frame : Protocol::Frame)
     while @sending
-      Scheduler.yield
+      Fiber.yield
     end
     @sending = true
 
@@ -61,9 +61,9 @@ class AMQP::Broker
     @sending = false
   end
 
-  private def send_frames(frames: Array(Protocol::Frame))
+  private def send_frames(frames : Array(Protocol::Frame))
     while @sending
-      Scheduler.yield
+      Fiber.yield
     end
     @sending = true
 
@@ -78,7 +78,7 @@ class AMQP::Broker
     @sends.send(Time.now) if @heartbeater_started
   end
 
-  def on_close(&block: ->)
+  def on_close(&block : ->)
     @close_callbacks.unshift block
   end
 
@@ -167,6 +167,6 @@ class AMQP::Broker
   end
 
   def write_protocol_header
-    @io.write(Slice.new(ProtocolHeader.buffer, ProtocolHeader.length))
+    @io.write(Slice.new(ProtocolHeader.buffer, ProtocolHeader.size))
   end
 end

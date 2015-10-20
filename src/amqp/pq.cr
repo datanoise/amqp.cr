@@ -10,26 +10,26 @@ class PQ(T)
   end
 
   def length
-    @graph.length
+    @graph.size
   end
 
   def <<(v)
     @graph.push v
-    PQ.swim(@graph, @graph.length - 1)
+    PQ.swim(@graph, @graph.size - 1)
   end
 
   def pop
     res =
-      case @graph.length
+      case @graph.size
       when 0
         yield
       when 1
         @graph.pop
       else
-        @graph.swap(0, @graph.length - 1)
+        @graph.swap(0, @graph.size - 1)
         @graph.pop
       end
-    PQ.sink(@graph, 0, @graph.length)
+    PQ.sink(@graph, 0, @graph.size)
     res
   end
 
@@ -50,7 +50,7 @@ class PQ(T)
   end
 
   protected def self.sink(graph, k, len)
-    raise "invalid args" unless len <= graph.length
+    raise "invalid args" unless len <= graph.size
     k += 1
     while 2*k <= len
       j = 2*k
