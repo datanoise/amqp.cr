@@ -167,6 +167,6 @@ class AMQP::Broker
   end
 
   def write_protocol_header
-    @io.write(Slice.new(ProtocolHeader.buffer, ProtocolHeader.size))
+    @io.write(Slice.new(ProtocolHeader.to_unsafe, ProtocolHeader.size))
   end
 end

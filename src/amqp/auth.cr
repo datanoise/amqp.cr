@@ -1,5 +1,5 @@
 module AMQP
-  class Auth
+  abstract class Auth
     getter mechanism
 
     def initialize(@mechanism)
