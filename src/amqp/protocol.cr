@@ -627,7 +627,7 @@ module AMQP::Protocol
        when Array(UInt8)
          write_octet('x')
          write(field.size.to_i32)
-         @io.write(Slice.new(field.buffer, field.size))
+         @io.write(Slice.new(field.to_unsafe, field.size))
        when Array
          write_octet('A')
          write(field.size.to_i32)
@@ -684,7 +684,7 @@ module AMQP::Protocol
       len = read_int32
       return nil unless len
       array = Array(UInt8).new(len) { 0_u8 }
-      unless read(Slice.new(array.buffer, len))
+      unless read(Slice.new(array.to_unsafe, len))
         return nil
       end
       array
