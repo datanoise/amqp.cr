@@ -9,7 +9,7 @@ class AMQP::Broker
 
   getter closed
 
-  def initialize(@config)
+  def initialize(@config : AMQP::Config)
     @socket = TCPSocket.new(@config.host, @config.port)
     @socket.sync = true
     @io = Protocol::IO.new(@socket)
@@ -17,11 +17,11 @@ class AMQP::Broker
     @closed = false
     @heartbeater_started = false
     @sending = false
-    @consumers = {} of UInt16 => Protocol::Frame+ ->
+    @consumers = {} of UInt16 => Protocol::Frame ->
     @close_callbacks = [] of ->
   end
 
-  def register_consumer(channel_id, &block : Protocol::Frame+ ->)
+  def register_consumer(channel_id, &block : Protocol::Frame ->)
     @consumers[channel_id] = block
   end
 

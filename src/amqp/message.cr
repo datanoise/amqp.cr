@@ -7,16 +7,16 @@ class AMQP::Message
   getter! properties
 
   # the following properties are provided by 'get' and 'deliver' methods
-  property delivery_tag
-  property redelivered
+  property delivery_tag : UInt64?
+  property redelivered : Bool?
   # these two properties are also provider by 'return' method
-  property exchange
-  property key
+  property exchange : AMQP::Exchange?
+  property key : String?
 
   # provided by amqp 'get' method
-  property message_count
+  property message_count : UInt32?
 
-  def initialize(@body, @properties = Protocol::Properties.new)
+  def initialize(@body : String, @properties = Protocol::Properties.new)
   end
 
   def ack

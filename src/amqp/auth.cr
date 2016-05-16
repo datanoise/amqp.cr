@@ -2,7 +2,7 @@ module AMQP
   abstract class Auth
     getter mechanism
 
-    def initialize(@mechanism)
+    def initialize(@mechanism : String)
     end
 
     abstract def response(username, password): String
