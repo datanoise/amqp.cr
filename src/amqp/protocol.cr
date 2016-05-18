@@ -20,7 +20,7 @@ module AMQP::Protocol
   struct Decimal
     getter scale, value
 
-    def initialize(@scale, @value)
+    def initialize(@scale : UInt8, @value : Int32)
     end
   end
 
@@ -206,8 +206,16 @@ module AMQP::Protocol
     HEARTBEAT = 8_u8
     FINAL_OCTET = 0xCE_u8
 
+    @type : UInt8
+    @channel : UInt16
+
     getter :type
     getter :channel
+
+    def initialize
+      @type = AMQP::Protocol::Method
+      @channel = 0_u16
+    end
 
     def encode(io)
       io.write_octet(@type)
@@ -255,7 +263,7 @@ module AMQP::Protocol
   class MethodFrame < Frame
     getter method
 
-    def initialize(@channel, @method)
+    def initialize(@channel : UInt16, @method : AMQP::Protocol::Method)
       @type = METHOD
     end
 
@@ -285,7 +293,7 @@ module AMQP::Protocol
     getter body_size
     getter properties
 
-    def initialize(@channel, @cls_id, @weight, @body_size)
+    def initialize(@channel : UInt16, @cls_id : UInt16, @weight : UInt16, @body_size : UInt64)
       @type = HEADERS
       @properties = Properties.new
     end
@@ -325,7 +333,7 @@ module AMQP::Protocol
   class BodyFrame < Frame
     getter body
 
-    def initialize(@channel, @body)
+    def initialize(@channel : UInt16, @body : Slice(UInt8))
       @type = BODY
     end
 
@@ -372,7 +380,7 @@ module AMQP::Protocol
   end
 
   class IO
-    @@bigendian = \
+    @@bigendian : Bool = \
       begin
         tmp = 1_u16
         ptr = pointerof(tmp)
@@ -381,7 +389,11 @@ module AMQP::Protocol
 
     getter eof
 
-    def initialize(@io)
+    def initialize(@io : MemoryIO)
+      @eof = false
+    end
+
+    def initialize(@io : Socket)
       @eof = false
     end
 
@@ -671,7 +683,7 @@ module AMQP::Protocol
     def read_timestamp
       tv_sec = read_int64
       return nil unless tv_sec
-      spec = LibC::TimeSpec.new
+      spec = LibC::Timespec.new
       spec.tv_sec = tv_sec
       Time.new(spec)
     end

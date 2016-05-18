@@ -12,7 +12,7 @@ class AMQP::Exchange
 
   getter channel, type, name, durable, auto_delete, internal, args
 
-  def initialize(@channel, @name, @type, @durable, @auto_delete, @internal, @args)
+  def initialize(@channel : AMQP::Channel, @name : String, @type : String, @durable : Bool, @auto_delete : Bool, @internal : Bool, @args : Hash(String, AMQP::Protocol::Field))
     unless BUILTIN_TYPES.includes?(@type)
       raise "Invalid exchange type: #{@type}"
     end

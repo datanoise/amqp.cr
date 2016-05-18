@@ -22,8 +22,13 @@ class AMQP::Channel
   getter rpc
   getter msg
 
-  def initialize(@broker)
-    @channel_id = Channel.next_channel
+  @channel_id : UInt16
+  @content_method : AMQP::Protocol::Method|Nil
+  @header_frame : Protocol::HeaderFrame|Nil
+
+
+  def initialize(@broker : AMQP::Broker)
+    @channel_id= Channel.next_channel
     @rpc = Timed::Channel(Protocol::Method).new
     @msg = Timed::Channel(Message).new(1)
     @flow_callbacks = [] of Bool ->
@@ -31,18 +36,16 @@ class AMQP::Channel
     @queues = {} of String => Queue
     @subscribers = {} of String => Message ->
 
-    @on_return_callback = -> (code: UInt16, text: String, msg: Message) {}
+    @on_return_callback = nil
 
     # confirm mode attributes
     @in_confirm_mode = false
-    @on_confirm_callback = -> (delivery_tag: UInt64, ack: Bool) {}
+    @on_confirm_callback = nil
     @pending_confirms = PQ(UInt64).new
     @publish_counter = 0_u64
 
     # these fields are used to buffer incoming methods with content
-    @content_method = nil
     @payload = nil
-    @header_frame = nil
 
     # close channel attributes
     @close_callbacks = [] of UInt16, String ->
@@ -512,7 +515,7 @@ class AMQP::Channel
     end
   end
 
-  private def process_frame(frame)
+  private def process_frame(frame : Protocol::Frame)
     case frame
     when Protocol::MethodFrame
       method = frame.method
@@ -594,7 +597,7 @@ class AMQP::Channel
     when Protocol::Basic::Return
       msg.exchange = @exchanges[content_method.exchange]
       msg.key = content_method.routing_key
-      @on_return_callback.call(content_method.reply_code, content_method.reply_text, msg)
+      @on_return_callback.try &.call(content_method.reply_code, content_method.reply_text, msg)
     when Protocol::Basic::GetOk
       msg.delivery_tag = content_method.delivery_tag
       msg.redelivered = content_method.redelivered
@@ -618,7 +621,7 @@ class AMQP::Channel
       if last != delivery_tag
         unacked << last
       else
-        @on_confirm_callback.call(delivery_tag, ack)
+        @on_confirm_callback.try &.call(delivery_tag, ack)
         break
       end
     end
@@ -630,7 +633,7 @@ class AMQP::Channel
     loop do
       last = @pending_confirms.pop?
       break unless last
-      @on_confirm_callback.call(last, ack)
+      @on_confirm_callback.try &.call(last, ack)
       break if last == delivery_tag
     end
   end

@@ -10,7 +10,7 @@ require "./protocol"
 class AMQP::Queue
   getter channel, name, durable, exclusive, auto_delete, args
 
-  def initialize(@channel, @name, @durable, @exclusive, @auto_delete, @args)
+  def initialize(@channel : AMQP::Channel, @name : String, @durable : Bool, @exclusive : Bool, @auto_delete : Bool, @args : Hash(String, AMQP::Protocol::Field))
   end
 
   # See `channel#queue` method.
@@ -63,7 +63,7 @@ class AMQP::Queue
   # This method unbinds a queue from an exchange.
   #
   # @param exchange: an exchange to unbind from.
-  # 
+  #
   # @param key: Specifies the routing key of the binding to unbind.
   #
   # @param args: Specifies the arguments of the binding to unbind.
@@ -164,7 +164,7 @@ class AMQP::Queue
   end
 
   # Direct access to a queue.
-  # 
+  #
   # This method provides a direct access to the messages in a queue using a
   # synchronous dialogue that is designed for specific types of application
   # where synchronous functionality is more important than performance.

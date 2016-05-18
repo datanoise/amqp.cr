@@ -106,7 +106,7 @@ module AMQP::Protocol
 
       getter version_major, version_minor, server_properties, mechanisms, locales
 
-      def initialize(@version_major, @version_minor, @server_properties, @mechanisms, @locales)
+      def initialize(@version_major : UInt8, @version_minor : UInt8, @server_properties : Hash(String, AMQP::Protocol::Field), @mechanisms : String, @locales : String)
       end
 
       def id
@@ -168,7 +168,7 @@ module AMQP::Protocol
 
       getter client_properties, mechanism, response, locale
 
-      def initialize(@client_properties, @mechanism, @response, @locale)
+      def initialize(@client_properties :  Hash(String, AMQP::Protocol::Field), @mechanism : String, @response : String, @locale : String)
       end
 
       def id
@@ -224,7 +224,7 @@ module AMQP::Protocol
 
       getter challenge
 
-      def initialize(@challenge)
+      def initialize(@challenge : String)
       end
 
       def id
@@ -262,7 +262,7 @@ module AMQP::Protocol
 
       getter response
 
-      def initialize(@response)
+      def initialize(@response : String )
       end
 
       def id
@@ -300,7 +300,7 @@ module AMQP::Protocol
 
       getter channel_max, frame_max, heartbeat
 
-      def initialize(@channel_max, @frame_max, @heartbeat)
+      def initialize(@channel_max : UInt16, @frame_max : UInt32, @heartbeat : UInt16)
       end
 
       def id
@@ -350,7 +350,7 @@ module AMQP::Protocol
 
       getter channel_max, frame_max, heartbeat
 
-      def initialize(@channel_max, @frame_max, @heartbeat)
+      def initialize(@channel_max : UInt16, @frame_max : UInt32, @heartbeat : UInt16)
       end
 
       def id
@@ -400,7 +400,7 @@ module AMQP::Protocol
 
       getter virtual_host, reserved_1, reserved_2
 
-      def initialize(@virtual_host, @reserved_1, @reserved_2)
+      def initialize(@virtual_host : String, @reserved_1 : String, @reserved_2 : Bool)
       end
 
       def id
@@ -453,7 +453,7 @@ module AMQP::Protocol
 
       getter reserved_1
 
-      def initialize(@reserved_1)
+      def initialize(@reserved_1 : String)
       end
 
       def id
@@ -491,7 +491,7 @@ module AMQP::Protocol
 
       getter reply_code, reply_text, class_id, method_id
 
-      def initialize(@reply_code, @reply_text, @class_id, @method_id)
+      def initialize(@reply_code : UInt16, @reply_text : String, @class_id : UInt16, @method_id : UInt16)
       end
 
       def id
@@ -578,7 +578,7 @@ module AMQP::Protocol
 
       getter reason
 
-      def initialize(@reason)
+      def initialize(@reason : String)
       end
 
       def id
@@ -652,7 +652,7 @@ module AMQP::Protocol
 
       getter reserved_1
 
-      def initialize(@reserved_1)
+      def initialize(@reserved_1 : String)
       end
 
       def id
@@ -690,7 +690,7 @@ module AMQP::Protocol
 
       getter reserved_1
 
-      def initialize(@reserved_1)
+      def initialize(@reserved_1 : String)
       end
 
       def id
@@ -728,7 +728,7 @@ module AMQP::Protocol
 
       getter active
 
-      def initialize(@active)
+      def initialize(@active : Bool)
       end
 
       def id
@@ -769,7 +769,7 @@ module AMQP::Protocol
 
       getter active
 
-      def initialize(@active)
+      def initialize(@active : Bool)
       end
 
       def id
@@ -810,7 +810,7 @@ module AMQP::Protocol
 
       getter reply_code, reply_text, class_id, method_id
 
-      def initialize(@reply_code, @reply_text, @class_id, @method_id)
+      def initialize(@reply_code : UInt16, @reply_text : String, @class_id : UInt16, @method_id : UInt16)
       end
 
       def id
@@ -902,7 +902,7 @@ module AMQP::Protocol
 
       getter reserved_1, exchange, type, passive, durable, auto_delete, internal, no_wait, arguments
 
-      def initialize(@reserved_1, @exchange, @type, @passive, @durable, @auto_delete, @internal, @no_wait, @arguments)
+      def initialize(@reserved_1 : UInt16, @exchange : String, @type : String, @passive : Bool, @durable : Bool, @auto_delete : Bool, @internal : Bool, @no_wait : Bool, @arguments : Hash(String, AMQP::Protocol::Field))
       end
 
       def id
@@ -1018,7 +1018,7 @@ module AMQP::Protocol
 
       getter reserved_1, exchange, if_unused, no_wait
 
-      def initialize(@reserved_1, @exchange, @if_unused, @no_wait)
+      def initialize(@reserved_1 : UInt16, @exchange : String, @if_unused : Bool, @no_wait : Bool)
       end
 
       def id
@@ -1107,7 +1107,7 @@ module AMQP::Protocol
 
       getter reserved_1, destination, source, routing_key, no_wait, arguments
 
-      def initialize(@reserved_1, @destination, @source, @routing_key, @no_wait, @arguments)
+      def initialize(@reserved_1 : UInt16, @destination : String, @source : String, @routing_key : String, @no_wait : Bool, @arguments : Hash(String, AMQP::Protocol::Field))
       end
 
       def id
@@ -1209,7 +1209,7 @@ module AMQP::Protocol
 
       getter reserved_1, destination, source, routing_key, no_wait, arguments
 
-      def initialize(@reserved_1, @destination, @source, @routing_key, @no_wait, @arguments)
+      def initialize(@reserved_1 : UInt16, @destination : String, @source : String, @routing_key : String, @no_wait : Bool, @arguments : Hash(String, AMQP::Protocol::Field))
       end
 
       def id
@@ -1316,7 +1316,7 @@ module AMQP::Protocol
 
       getter reserved_1, queue, passive, durable, exclusive, auto_delete, no_wait, arguments
 
-      def initialize(@reserved_1, @queue, @passive, @durable, @exclusive, @auto_delete, @no_wait, @arguments)
+      def initialize(@reserved_1 : UInt16, @queue : String, @passive : Bool, @durable : Bool, @exclusive : Bool, @auto_delete : Bool, @no_wait : Bool, @arguments : Hash(String, AMQP::Protocol::Field))
       end
 
       def id
@@ -1395,7 +1395,7 @@ module AMQP::Protocol
 
       getter queue, message_count, consumer_count
 
-      def initialize(@queue, @message_count, @consumer_count)
+      def initialize(@queue : String, @message_count : UInt32, @consumer_count : UInt32)
       end
 
       def id
@@ -1445,7 +1445,7 @@ module AMQP::Protocol
 
       getter reserved_1, queue, exchange, routing_key, no_wait, arguments
 
-      def initialize(@reserved_1, @queue, @exchange, @routing_key, @no_wait, @arguments)
+      def initialize(@reserved_1 : UInt16, @queue : String, @exchange : String, @routing_key : String, @no_wait : Bool, @arguments : Hash(String, AMQP::Protocol::Field))
       end
 
       def id
@@ -1547,7 +1547,7 @@ module AMQP::Protocol
 
       getter reserved_1, queue, exchange, routing_key, arguments
 
-      def initialize(@reserved_1, @queue, @exchange, @routing_key, @arguments)
+      def initialize(@reserved_1 : UInt16, @queue : String, @exchange : String, @routing_key : String, @arguments : Hash(String, AMQP::Protocol::Field))
       end
 
       def id
@@ -1640,7 +1640,7 @@ module AMQP::Protocol
 
       getter reserved_1, queue, no_wait
 
-      def initialize(@reserved_1, @queue, @no_wait)
+      def initialize(@reserved_1 : UInt16, @queue : String, @no_wait : Bool)
       end
 
       def id
@@ -1693,7 +1693,7 @@ module AMQP::Protocol
 
       getter message_count
 
-      def initialize(@message_count)
+      def initialize(@message_count : UInt32)
       end
 
       def id
@@ -1731,7 +1731,7 @@ module AMQP::Protocol
 
       getter reserved_1, queue, if_unused, if_empty, no_wait
 
-      def initialize(@reserved_1, @queue, @if_unused, @if_empty, @no_wait)
+      def initialize(@reserved_1 : UInt16, @queue : String, @if_unused : Bool, @if_empty : Bool, @no_wait : Bool)
       end
 
       def id
@@ -1794,7 +1794,7 @@ module AMQP::Protocol
 
       getter message_count
 
-      def initialize(@message_count)
+      def initialize(@message_count : UInt32)
       end
 
       def id
@@ -1837,7 +1837,7 @@ module AMQP::Protocol
 
       getter prefetch_size, prefetch_count, global
 
-      def initialize(@prefetch_size, @prefetch_count, @global)
+      def initialize(@prefetch_size : UInt32, @prefetch_count : UInt16, @global : Bool)
       end
 
       def id
@@ -1921,7 +1921,7 @@ module AMQP::Protocol
 
       getter reserved_1, queue, consumer_tag, no_local, no_ack, exclusive, no_wait, arguments
 
-      def initialize(@reserved_1, @queue, @consumer_tag, @no_local, @no_ack, @exclusive, @no_wait, @arguments)
+      def initialize(@reserved_1 : UInt16, @queue : String, @consumer_tag : String, @no_local : Bool, @no_ack : Bool, @exclusive : Bool, @no_wait : Bool, @arguments : Hash(String, AMQP::Protocol::Field))
       end
 
       def id
@@ -2001,7 +2001,7 @@ module AMQP::Protocol
 
       getter consumer_tag
 
-      def initialize(@consumer_tag)
+      def initialize(@consumer_tag : String)
       end
 
       def id
@@ -2039,7 +2039,7 @@ module AMQP::Protocol
 
       getter consumer_tag, no_wait
 
-      def initialize(@consumer_tag, @no_wait)
+      def initialize(@consumer_tag : String, @no_wait : Bool)
       end
 
       def id
@@ -2086,7 +2086,7 @@ module AMQP::Protocol
 
       getter consumer_tag
 
-      def initialize(@consumer_tag)
+      def initialize(@consumer_tag : String)
       end
 
       def id
@@ -2124,7 +2124,7 @@ module AMQP::Protocol
 
       getter reserved_1, exchange, routing_key, mandatory, immediate, properties, payload
 
-      def initialize(@reserved_1, @exchange, @routing_key, @mandatory, @immediate, @properties, @payload)
+      def initialize(@reserved_1 : UInt16, @exchange : String, @routing_key : String, @mandatory : Bool, @immediate : Bool, @properties : AMQP::Protocol::Properties, @payload : String)
       end
 
       def id
@@ -2154,7 +2154,7 @@ module AMQP::Protocol
         raise ::IO::EOFError.new unless bits
         mandatory = bits & (1 << 0) == 1
         immediate = bits & (1 << 1) == 1
-        properties = Table.new
+        properties = AMQP::Protocol::Properties.new
         payload = ""
         Publish.new(reserved_1, exchange, routing_key, mandatory, immediate, properties, payload)
       end
@@ -2200,7 +2200,7 @@ module AMQP::Protocol
 
       getter reply_code, reply_text, exchange, routing_key, properties, payload
 
-      def initialize(@reply_code, @reply_text, @exchange, @routing_key, @properties, @payload)
+      def initialize(@reply_code : UInt16, @reply_text : String, @exchange : String, @routing_key : String, @properties : Hash(String, AMQP::Protocol::Field), @payload : String)
       end
 
       def id
@@ -2268,7 +2268,7 @@ module AMQP::Protocol
 
       getter consumer_tag, delivery_tag, redelivered, exchange, routing_key, properties, payload
 
-      def initialize(@consumer_tag, @delivery_tag, @redelivered, @exchange, @routing_key, @properties, @payload)
+      def initialize(@consumer_tag : String, @delivery_tag : UInt64, @redelivered : Bool, @exchange : String, @routing_key : String, @properties : Hash(String, AMQP::Protocol::Field), @payload : String)
       end
 
       def id
@@ -2345,7 +2345,7 @@ module AMQP::Protocol
 
       getter reserved_1, queue, no_ack
 
-      def initialize(@reserved_1, @queue, @no_ack)
+      def initialize(@reserved_1 : UInt16, @queue : String, @no_ack : Bool)
       end
 
       def id
@@ -2398,7 +2398,7 @@ module AMQP::Protocol
 
       getter delivery_tag, redelivered, exchange, routing_key, message_count, properties, payload
 
-      def initialize(@delivery_tag, @redelivered, @exchange, @routing_key, @message_count, @properties, @payload)
+      def initialize(@delivery_tag : UInt64, @redelivered : Bool, @exchange : String, @routing_key : String, @message_count : UInt32, @properties : Hash(String, AMQP::Protocol::Field), @payload : String)
       end
 
       def id
@@ -2475,7 +2475,7 @@ module AMQP::Protocol
 
       getter reserved_1
 
-      def initialize(@reserved_1)
+      def initialize(@reserved_1 : String)
       end
 
       def id
@@ -2513,7 +2513,7 @@ module AMQP::Protocol
 
       getter delivery_tag, multiple
 
-      def initialize(@delivery_tag, @multiple)
+      def initialize(@delivery_tag : UInt64, @multiple : Bool)
       end
 
       def id
@@ -2560,7 +2560,7 @@ module AMQP::Protocol
 
       getter delivery_tag, requeue
 
-      def initialize(@delivery_tag, @requeue)
+      def initialize(@delivery_tag : UInt64, @requeue : Bool)
       end
 
       def id
@@ -2607,7 +2607,7 @@ module AMQP::Protocol
 
       getter requeue
 
-      def initialize(@requeue)
+      def initialize(@requeue : Bool)
       end
 
       def id
@@ -2648,7 +2648,7 @@ module AMQP::Protocol
 
       getter requeue
 
-      def initialize(@requeue)
+      def initialize(@requeue : Bool)
       end
 
       def id
@@ -2720,7 +2720,7 @@ module AMQP::Protocol
 
       getter delivery_tag, multiple, requeue
 
-      def initialize(@delivery_tag, @multiple, @requeue)
+      def initialize(@delivery_tag : UInt64, @multiple : Bool, @requeue : Bool)
       end
 
       def id
@@ -2968,7 +2968,7 @@ module AMQP::Protocol
 
       getter nowait
 
-      def initialize(@nowait)
+      def initialize(@nowait : Bool)
       end
 
       def id

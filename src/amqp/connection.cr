@@ -34,9 +34,9 @@ module AMQP
                    @vhost = "/",
                    @channel_max = 0_u16,
                    @frame_max = 0_u32,
-                   @heartbeat = 0.seconds,
+                   @heartbeat : Time::Span = 0.seconds,
                    @logger = Logger.new(STDOUT),
-                   @log_level = Logger::INFO)
+                   @log_level : Logger::Severity = Logger::INFO)
       @logger.level = @log_level
     end
 
@@ -222,6 +222,11 @@ module AMQP
       end
       @broker.on_close { do_close }
     end
+
+    @version_major =  0_u8
+    @version_minor =  0_u8
+    @server_properties = Hash(String, AMQP::Protocol::Field).new
+
 
     protected def handshake
       @broker.write_protocol_header
