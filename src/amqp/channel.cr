@@ -1,6 +1,7 @@
 require "./errors"
 require "./macros"
 require "./protocol"
+require "./exchange"
 require "./spec091"
 require "./pq"
 
@@ -16,6 +17,8 @@ class AMQP::Channel
     @@next_channel += 1
     @@next_channel
   end
+
+  @default_exchange : Exchange?
 
   getter closed
   getter broker
