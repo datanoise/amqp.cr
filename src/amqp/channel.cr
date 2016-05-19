@@ -29,8 +29,8 @@ class AMQP::Channel
 
   def initialize(@broker : AMQP::Broker)
     @channel_id= Channel.next_channel
-    @rpc = Timed::Channel(Protocol::Method).new
-    @msg = Timed::Channel(Message).new(1)
+    @rpc = ::Channel(Protocol::Method).new
+    @msg = ::Channel(Message).new(1)
     @flow_callbacks = [] of Bool ->
     @exchanges = {} of String => Exchange
     @queues = {} of String => Queue
@@ -496,13 +496,13 @@ class AMQP::Channel
   def rpc_call(method)
     oneway_call(method)
     @rpc.receive
-  rescue Timed::ChannelClosed
+  rescue ::Channel::ClosedError
     raise ChannelClosed.new(@close_code, @close_msg)
   end
 
   def oneway_call(method)
     @broker.send(@channel_id, method)
-  rescue Timed::ChannelClosed
+  rescue ::Channel::ClosedError
     raise ChannelClosed.new(@close_code, @close_msg)
   end
 

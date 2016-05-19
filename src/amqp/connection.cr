@@ -55,9 +55,9 @@ module AMQP
     getter closed
 
     def initialize(@config = Config.new)
-      @rpc = Timed::Channel(Protocol::Method).new
+      @rpc = ::Channel(Protocol::Method).new
       @broker = Broker.new(@config)
-      @break_loop = Timed::Channel(Bool).new
+      @break_loop = Timed::TimedChannel(Bool).new(1)
 
       # close connection attributes
       @close_callbacks = [] of UInt16, String ->
@@ -191,14 +191,14 @@ module AMQP
 
     private def oneway_call(method)
       @broker.send(ConnectionChannelID, method)
-    rescue Timed::ChannelClosed
+    rescue ::Channel::ClosedError
       raise ConnectionClosed.new(@close_code, @close_msg)
     end
 
     private def rpc_call(method)
       oneway_call(method)
       @rpc.receive
-    rescue Timed::ChannelClosed
+    rescue ::Channel::ClosedError
       raise ConnectionClosed.new(@close_code, @close_msg)
     end
 
