@@ -536,7 +536,7 @@ module AMQP::Protocol
       when 'V'
         nil
       else
-        raise SyntaxError.new
+        raise FrameError.new("Unknown field type '#{ty.chr}'")
       end
     end
 
