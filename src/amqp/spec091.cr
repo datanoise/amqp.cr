@@ -2124,7 +2124,11 @@ module AMQP::Protocol
 
       getter reserved_1, exchange, routing_key, mandatory, immediate, properties, payload
 
-      def initialize(@reserved_1 : UInt16, @exchange : String, @routing_key : String, @mandatory : Bool, @immediate : Bool, @properties : AMQP::Protocol::Properties, @payload : String)
+      def initialize(@reserved_1 : UInt16, @exchange : String, @routing_key : String, @mandatory : Bool, @immediate : Bool, @properties : AMQP::Protocol::Properties, @payload : Slice(UInt8))
+      end
+
+      def initialize(@reserved_1 : UInt16, @exchange : String, @routing_key : String, @mandatory : Bool, @immediate : Bool, @properties : AMQP::Protocol::Properties, payload : String)
+        @payload = payload.to_slice
       end
 
       def id

@@ -41,8 +41,11 @@ class AMQP::Broker
 
       limit = @config.frame_max - Protocol::FRAME_HEADER_SIZE
       while payload && !payload.empty?
-        body, payload = payload[0, limit], (limit > payload.size ? "" : payload[limit, payload.size - limit])
-        frames << Protocol::BodyFrame.new(channel, body.to_slice)
+        if payload.size < limit
+          limit = payload.size
+        end
+        body, payload = payload[0, limit], (limit > payload.size ? Slice(UInt8).new(0) : payload[limit, payload.size - limit])
+        frames << Protocol::BodyFrame.new(channel, body)
       end
       send_frames(frames)
     else

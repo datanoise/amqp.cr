@@ -252,7 +252,6 @@ class AMQP::Channel
   #
   def publish(msg, exchange_name, key, mandatory = false, immediate = false)
     msg.properties.delivery_mode = Message::TRANSIENT if msg.properties.delivery_mode == 0
-    msg.properties.content_type = "application/octet-stream" if msg.properties.content_type.empty?
     publish = Protocol::Basic::Publish.new(0_u16, exchange_name, key, mandatory, immediate, msg.properties, msg.body)
     oneway_call(publish)
 

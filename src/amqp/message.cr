@@ -16,8 +16,14 @@ class AMQP::Message
   # provided by amqp 'get' method
   property message_count : UInt32?
 
-  def initialize(@body : String, @properties = Protocol::Properties.new)
+  def initialize(body : String, @properties = Protocol::Properties.new)
+    @body = body.to_slice
   end
+
+  def initialize(@body : Slice(UInt8), @properties = Protocol::Properties.new)
+  end
+
+
 
   def ack
     if exchange = @exchange
