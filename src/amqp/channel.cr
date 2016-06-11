@@ -582,7 +582,7 @@ class AMQP::Channel
   end
 
   private def deliver_content
-    msg = Message.new(@payload.not_nil!.to_s, @header_frame.not_nil!.properties)
+    msg = Message.new(@payload.not_nil!.to_slice, @header_frame.not_nil!.properties)
     content_method = @content_method.not_nil!
     case content_method
     when Protocol::Basic::Deliver
