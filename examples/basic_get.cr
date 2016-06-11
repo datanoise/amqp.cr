@@ -45,8 +45,7 @@ AMQP::Connection.start do |conn|
       msg = queue.get
       next unless msg
       counter += 1
-      body = String.new(msg.body)
-      puts "Received msg: #{body}. Count: #{msg.message_count}"
+      puts "Received msg: #{msg.to_s}. Count: #{msg.message_count}"
       msg.ack
       break if counter == COUNT
       sleep 0.5

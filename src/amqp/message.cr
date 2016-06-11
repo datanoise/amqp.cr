@@ -48,4 +48,8 @@ class AMQP::Message
       end
     end
   end
+
+  def to_s
+    String.new(@body)
+  end
 end
