@@ -1,3 +1,5 @@
+require "./exchange"
+
 class AMQP::Message
 
   TRANSIENT  = 1_u8
@@ -22,8 +24,6 @@ class AMQP::Message
 
   def initialize(@body : Slice(UInt8), @properties = Protocol::Properties.new)
   end
-
-
 
   def ack
     if exchange = @exchange
