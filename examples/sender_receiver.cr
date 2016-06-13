@@ -19,11 +19,11 @@ AMQP::Connection.start do |conn|
   queue = channel.queue(QUEUE_NAME)
   queue.bind(exchange, queue.name)
   queue.subscribe do |msg|
-    puts "Received msg (1): #{msg.body}"
+    puts "Received msg (1): #{msg.to_s}"
     msg.ack
   end
   queue.subscribe do |msg|
-    puts "Received msg (2): #{msg.body}"
+    puts "Received msg (2): #{msg.to_s}"
     msg.ack
   end
 

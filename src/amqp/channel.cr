@@ -252,7 +252,6 @@ class AMQP::Channel
   #
   def publish(msg, exchange_name, key, mandatory = false, immediate = false)
     msg.properties.delivery_mode = Message::TRANSIENT if msg.properties.delivery_mode == 0
-    msg.properties.content_type = "application/octet-stream" if msg.properties.content_type.empty?
     publish = Protocol::Basic::Publish.new(0_u16, exchange_name, key, mandatory, immediate, msg.properties, msg.body)
     oneway_call(publish)
 
@@ -583,7 +582,7 @@ class AMQP::Channel
   end
 
   private def deliver_content
-    msg = Message.new(@payload.not_nil!.to_s, @header_frame.not_nil!.properties)
+    msg = Message.new(@payload.not_nil!.to_slice, @header_frame.not_nil!.properties)
     content_method = @content_method.not_nil!
     case content_method
     when Protocol::Basic::Deliver

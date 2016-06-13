@@ -1,3 +1,5 @@
+require "./exchange"
+
 class AMQP::Message
 
   TRANSIENT  = 1_u8
@@ -16,7 +18,11 @@ class AMQP::Message
   # provided by amqp 'get' method
   property message_count : UInt32?
 
-  def initialize(@body : String, @properties = Protocol::Properties.new)
+  def initialize(body : String, @properties = Protocol::Properties.new)
+    @body = body.to_slice
+  end
+
+  def initialize(@body : Slice(UInt8), @properties = Protocol::Properties.new)
   end
 
   def ack
@@ -41,5 +47,9 @@ class AMQP::Message
         exchange.channel.nack(tag, requeue: requeue)
       end
     end
+  end
+
+  def to_s
+    String.new(@body)
   end
 end
