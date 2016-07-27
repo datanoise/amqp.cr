@@ -293,9 +293,8 @@ module AMQP::Protocol
     getter body_size
     getter properties
 
-    def initialize(@channel : UInt16, @cls_id : UInt16, @weight : UInt16, @body_size : UInt64)
+    def initialize(@channel : UInt16, @cls_id : UInt16, @weight : UInt16, @body_size : UInt64, @properties = Properties.new)
       @type = HEADERS
-      @properties = Properties.new
     end
 
     def self.parse(channel, size, io)
