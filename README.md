@@ -15,6 +15,16 @@ Crystal language version 0.7.0 and higher.
 The goal is to provide the usable interface to RabbitMQ server, by implementing
 the AMQP 0.9.1 spec in pure Crystal language.
 
+# Installation
+
+Add this to your application's `shard.yml`:
+
+```yml
+dependencies:
+  amqp:
+    github: datanoise/amqp.cr
+```
+
 # Usage
 
 Please see 'examples' directory for various usage scenarios.
