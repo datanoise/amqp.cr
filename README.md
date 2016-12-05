@@ -8,7 +8,7 @@ AMQP 0.9.1 client with RabbitMQ extensions in Crystal.
 
 # Requirements
 
-Crystal language version 0.7.0 and higher.
+Crystal language version 0.20 and higher.
 
 # Goal
 

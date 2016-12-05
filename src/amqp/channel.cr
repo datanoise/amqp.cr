@@ -410,8 +410,8 @@ class AMQP::Channel
   # within a transaction will complete successfully or none of them will.
   #
   def tx
-    select = Protocol::Tx::Select.new
-    select_ok = rpc_call(select)
+    sel = Protocol::Tx::Select.new
+    select_ok = rpc_call(sel)
     assert_type(select_ok, Protocol::Tx::SelectOk)
     self
   end
@@ -563,7 +563,7 @@ class AMQP::Channel
       end
     when Protocol::HeaderFrame
       @header_frame = frame
-      @payload = MemoryIO.new
+      @payload = ::IO::Memory.new
       if frame.body_size == 0
         deliver_content
       end

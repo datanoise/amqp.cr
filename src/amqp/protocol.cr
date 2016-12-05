@@ -241,7 +241,7 @@ module AMQP::Protocol
       unless final == FINAL_OCTET
         raise FrameError.new "Final octet doesn't match"
       end
-      body_io = IO.new(MemoryIO.new(String.new body))
+      body_io = IO.new(::IO::Memory.new(String.new body))
       frame = case ty
               when METHOD
                 MethodFrame.parse(channel, size, body_io)
@@ -275,7 +275,7 @@ module AMQP::Protocol
     end
 
     def get_payload
-      buf = MemoryIO.new
+      buf = ::IO::Memory.new
       buf_io = IO.new(buf)
       @method.id.each {|v| buf_io.write_short(v)}
       @method.encode(buf_io)
@@ -310,7 +310,7 @@ module AMQP::Protocol
     end
 
     def get_payload
-      buf = MemoryIO.new
+      buf = ::IO::Memory.new
       io = IO.new(buf)
       io.write_short(@cls_id)
       io.write_short(@weight)
@@ -388,7 +388,7 @@ module AMQP::Protocol
 
     getter eof
 
-    def initialize(@io : MemoryIO)
+    def initialize(@io : ::IO::Memory)
       @eof = false
     end
 
@@ -398,7 +398,7 @@ module AMQP::Protocol
 
     macro read_typed(type)
       buf = uninitialized {{type}}
-      slice = Slice.new(pointerof(buf) as Pointer(UInt8), sizeof(typeof(buf)))
+      slice = Slice.new(pointerof(buf).as(Pointer(UInt8)), sizeof(typeof(buf)))
       unless read(slice)
         return nil
       end
@@ -488,7 +488,7 @@ module AMQP::Protocol
       str = read_longstr
       return nil unless str
       return table if str.empty?
-      io = IO.new(MemoryIO.new(str))
+      io = IO.new(::IO::Memory.new(str))
       loop do
         key = io.read_shortstr
         break unless key
@@ -544,7 +544,7 @@ module AMQP::Protocol
     end
 
     def write(v)
-      slice = Slice.new(pointerof(v) as Pointer(UInt8), sizeof(typeof(v)))
+      slice = Slice.new(pointerof(v).as(Pointer(UInt8)), sizeof(typeof(v)))
       if slice.size > 1 && !@@bigendian
         reverse(slice)
       end
@@ -597,7 +597,7 @@ module AMQP::Protocol
      end
 
      def write_table(table : Table)
-       buf = MemoryIO.new
+       buf = ::IO::Memory.new
        io = IO.new(buf)
        table.each do |key, value|
          io.write_shortstr(key)
@@ -661,7 +661,7 @@ module AMQP::Protocol
       unless read(slice)
         return nil
       end
-      io = IO.new(MemoryIO.new(String.new(slice)))
+      io = IO.new(::IO::Memory.new(String.new(slice)))
       array = [] of Field
       loop do
         field = io.read_field
