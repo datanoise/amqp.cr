@@ -137,7 +137,7 @@ class AMQP::Broker
         logger.error "Invalid frame type received: #{frame}"
       end
     end
-  rescue ex: Errno
+  rescue ex : Errno
     unless ex.errno == Errno::EBADF
       puts ex
       puts ex.backtrace.join("\n")
@@ -146,7 +146,7 @@ class AMQP::Broker
   rescue ex: IO::EOFError
     close
   rescue ex
-    puts ex
+    puts ex.inspect
     puts ex.backtrace.join("\n")
     close
   end
