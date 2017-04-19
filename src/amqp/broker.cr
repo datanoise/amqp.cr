@@ -19,6 +19,18 @@ class AMQP::Broker
     @sending = false
     @consumers = {} of UInt16 => Protocol::Frame ->
     @close_callbacks = [] of ->
+    channel_max = @config.channel_max == 0 ? UInt16::MAX : @config.channel_max
+    @channel_slots = Deque(UInt16).new(channel_max.to_i - 1) do |i|
+      (i + 1).to_u16
+    end
+  end
+
+  def next_channel_id
+    @channel_slots.shift
+  end
+
+  def return_channel_id(id)
+    @channel_slots.push(id)
   end
 
   def register_consumer(channel_id, &block : Protocol::Frame ->)

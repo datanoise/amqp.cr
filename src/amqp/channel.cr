@@ -11,13 +11,6 @@ require "./pq"
 # server and for both peers to operate the channel thereafter.
 #
 class AMQP::Channel
-  # TODO:implement better channel id allocation algorithm
-  @@next_channel = 0_u16
-  protected def self.next_channel
-    @@next_channel += 1
-    @@next_channel
-  end
-
   @default_exchange : Exchange?
 
   getter closed
@@ -31,7 +24,7 @@ class AMQP::Channel
 
 
   def initialize(@broker : AMQP::Broker)
-    @channel_id= Channel.next_channel
+    @channel_id = @broker.next_channel_id
     @rpc = ::Channel(Protocol::Method).new
     @msg = ::Channel(Message).new(1)
     @flow_callbacks = [] of Bool ->
@@ -493,6 +486,7 @@ class AMQP::Channel
     @msg.close
     @rpc.close
     @broker.unregister_consumer(@channel_id)
+    @broker.return_channel_id(@channel_id)
   end
 
   def rpc_call(method)
