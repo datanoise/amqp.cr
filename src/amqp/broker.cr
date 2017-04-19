@@ -143,7 +143,7 @@ class AMQP::Broker
       puts ex.backtrace.join("\n")
     end
     close
-  rescue ex: IO::EOFError
+  rescue ex : IO::Error
     close
   rescue ex
     puts ex.inspect
