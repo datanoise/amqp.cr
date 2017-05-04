@@ -19,6 +19,18 @@ class AMQP::Broker
     @sending = false
     @consumers = {} of UInt16 => Protocol::Frame ->
     @close_callbacks = [] of ->
+    channel_max = @config.channel_max == 0 ? UInt16::MAX : @config.channel_max
+    @channel_slots = Deque(UInt16).new(channel_max.to_i - 1) do |i|
+      (i + 1).to_u16
+    end
+  end
+
+  def next_channel_id
+    @channel_slots.shift
+  end
+
+  def return_channel_id(id)
+    @channel_slots.push(id)
   end
 
   def register_consumer(channel_id, &block : Protocol::Frame ->)
@@ -37,7 +49,7 @@ class AMQP::Broker
         raise Protocol::FrameError.new("unable to obtain the method's content")
       end
       properties, payload = method.content
-       frames << Protocol::HeaderFrame.new(channel, method.id.first, 0_u16, payload.size.to_u64, properties)
+      frames << Protocol::HeaderFrame.new(channel, method.id.first, 0_u16, payload.size.to_u64, properties)
 
       limit = @config.frame_max - Protocol::FRAME_HEADER_SIZE
       while payload && !payload.empty?
@@ -126,16 +138,16 @@ class AMQP::Broker
         logger.error "Invalid frame type received: #{frame}"
       end
     end
-  rescue ex: Errno
+  rescue ex : Errno
     unless ex.errno == Errno::EBADF
       puts ex
       puts ex.backtrace.join("\n")
     end
     close
-  rescue ex: IO::EOFError
+  rescue ex : IO::Error
     close
   rescue ex
-    puts ex
+    puts ex.inspect
     puts ex.backtrace.join("\n")
     close
   end
