@@ -83,7 +83,7 @@ module AMQP::Protocol
                    @reply_to = "",
                    @expiration = "",
                    @message_id = "",
-                   @timestamp = Time.new(0),
+                   @timestamp = Time.epoch(0),
                    @type = "",
                    @user_id = "",
                    @app_id = "",
