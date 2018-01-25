@@ -41,7 +41,7 @@ module Timed
     end
 
     def receive(interval : Time::Span)
-      raise ArgumentError.new("invalid timespan") if interval.ticks == 0
+      raise ArgumentError.new("invalid timespan") if interval.total_nanoseconds == 0
       start_time = Time.now
 
       while empty?
