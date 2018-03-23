@@ -2216,11 +2216,7 @@ module AMQP::Protocol
       end
 
       def has_content?
-        true
-      end
-
-      def content
-        {@properties, @payload}
+        false
       end
 
       def self.decode(io)
