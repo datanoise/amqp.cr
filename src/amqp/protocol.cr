@@ -83,7 +83,7 @@ module AMQP::Protocol
                    @reply_to = "",
                    @expiration = "",
                    @message_id = "",
-                   @timestamp = Time.new(0),
+                   @timestamp = Time.epoch(0),
                    @type = "",
                    @user_id = "",
                    @app_id = "",
@@ -174,7 +174,7 @@ module AMQP::Protocol
       flags = flags | FLAG_REPLY_TO         unless @reply_to.empty?
       flags = flags | FLAG_EXPIRATION       unless @expiration.empty?
       flags = flags | FLAG_MESSAGE_ID       unless @message_id.empty?
-      flags = flags | FLAG_TIMESTAMP        unless @timestamp.ticks == 0
+      flags = flags | FLAG_TIMESTAMP        unless @timestamp.epoch == 0
       flags = flags | FLAG_TYPE             unless @type.empty?
       flags = flags | FLAG_USER_ID          unless @user_id.empty?
       flags = flags | FLAG_APP_ID           unless @app_id.empty?
@@ -191,7 +191,7 @@ module AMQP::Protocol
       io.write_shortstr(@reply_to)         unless @reply_to.empty?
       io.write_shortstr(@expiration)       unless @expiration.empty?
       io.write_shortstr(@message_id)       unless @message_id.empty?
-      io.write_timestamp(@timestamp)       unless @timestamp.ticks == 0
+      io.write_timestamp(@timestamp)       unless @timestamp.epoch == 0
       io.write_shortstr(@type)             unless @type.empty?
       io.write_shortstr(@user_id)          unless @user_id.empty?
       io.write_shortstr(@app_id)           unless @app_id.empty?

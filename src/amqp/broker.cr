@@ -111,7 +111,7 @@ class AMQP::Broker
 
   def start_heartbeater
     return if @heartbeater_started
-    return if @config.heartbeat.ticks == 0
+    return if @config.heartbeat.total_nanoseconds == 0
     @heartbeater_started = true
     spawn { run_heartbeater }
   end
