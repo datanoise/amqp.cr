@@ -515,14 +515,16 @@ class AMQP::Channel
     case frame
     when Protocol::MethodFrame
       method = frame.method
+      if method.is_a? Protocol::Basic::Return
+        @on_return_callback.try &.call(method.reply_code, method.reply_text)
+        return
+      end
       if method.has_content?
         @content_method = method
         return
       end
 
       case method
-      when Protocol::Basic::Return
-        @on_return_callback.try &.call(method.reply_code, method.reply_text)
       when Protocol::Channel::Flow
         oneway_call(Protocol::Channel::FlowOk.new(method.active))
         @flow_callbacks.each &.call(method.active)
