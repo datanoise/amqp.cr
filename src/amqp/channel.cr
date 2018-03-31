@@ -274,7 +274,7 @@ class AMQP::Channel
   # "immediate" flag set, or an unroutable message published with the
   # "mandatory" flag set. The reply code and text provide information about the
   # reason that the message was undeliverable.
-  def on_return(&block: UInt16, String, Message ->)
+  def on_return(&block: UInt16, String ->)
     @on_return_callback = block
   end
 
@@ -515,6 +515,10 @@ class AMQP::Channel
     case frame
     when Protocol::MethodFrame
       method = frame.method
+      if method.is_a? Protocol::Basic::Return
+        @on_return_callback.try &.call(method.reply_code, method.reply_text)
+        return
+      end
       if method.has_content?
         @content_method = method
         return
@@ -590,10 +594,6 @@ class AMQP::Channel
       else
         subscriber.call(msg)
       end
-    when Protocol::Basic::Return
-      msg.exchange = @exchanges[content_method.exchange]
-      msg.key = content_method.routing_key
-      @on_return_callback.try &.call(content_method.reply_code, content_method.reply_text, msg)
     when Protocol::Basic::GetOk
       msg.delivery_tag = content_method.delivery_tag
       msg.redelivered = content_method.redelivered
