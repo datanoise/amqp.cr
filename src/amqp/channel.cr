@@ -515,10 +515,6 @@ class AMQP::Channel
     case frame
     when Protocol::MethodFrame
       method = frame.method
-      if method.is_a? Protocol::Basic::Return
-        @on_return_callback.try &.call(method.reply_code, method.reply_text)
-        return
-      end
       if method.has_content?
         @content_method = method
         return
@@ -594,6 +590,8 @@ class AMQP::Channel
       else
         subscriber.call(msg)
       end
+    when Protocol::Basic::Return
+      @on_return_callback.try &.call(content_method.reply_code, content_method.reply_text)
     when Protocol::Basic::GetOk
       msg.delivery_tag = content_method.delivery_tag
       msg.redelivered = content_method.redelivered
@@ -610,7 +608,6 @@ class AMQP::Channel
 
   private def confirm_single(delivery_tag, ack)
     unacked = [] of UInt64
-
     loop do
       last = @pending_confirms.pop?
       break unless last
