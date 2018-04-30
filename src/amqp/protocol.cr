@@ -30,6 +30,8 @@ module AMQP::Protocol
                 UInt16 |
                 UInt32 |
                 UInt64 |
+                Int8 |
+                Int16 |
                 Int32 |
                 Int64 |
                 Float32 |
@@ -424,6 +426,7 @@ module AMQP::Protocol
     def_read(UInt16)
     def_read(UInt32)
     def_read(UInt64)
+    def_read(Int8)
     def_read(Int16)
     def_read(Int32)
     def_read(Int64)
@@ -506,22 +509,31 @@ module AMQP::Protocol
 
       case ty.chr
       when 't'
-        v = read_octet
-        v != 0
+        read_octet != 0_u8
       when 'b'
-        read_octet
-      when 's'
+        read_int8
+      when 'B'
+        read_uint8
+      when 'U'
+        read_int16
+      when 'u'
         read_uint16
       when 'I'
         read_int32
-      when 'l'
+      when 'i'
+        read_uint32
+      when 'L'
         read_int64
+      when 'l'
+        read_uint64
       when 'f'
         read_float32
       when 'd'
         read_float64
       when 'D'
         read_decimal
+      when 's'
+        read_shortstr
       when 'S'
         read_longstr
       when 'A'
@@ -555,6 +567,7 @@ module AMQP::Protocol
      def_write(UInt16)
      def_write(UInt32)
      def_write(UInt64)
+     def_write(Int8)
      def_write(Int16)
      def_write(Int32)
      def_write(Int64)
@@ -615,14 +628,26 @@ module AMQP::Protocol
        when Bool
          write_octet('t')
          write_octet(field ? 1_u8 : 0_u8)
-       when UInt8
+       when Int8
          write_octet('b')
          write(field)
+       when UInt8
+         write_octet('B')
+         write(field)
+       when Int16
+         write_octet('U')
+         write(field)
        when UInt16
-         write_octet('s')
+         write_octet('u')
+         write(field)
+       when Int32
+         write_octet('I')
          write(field)
        when UInt32
-         write_octet('I')
+         write_octet('i')
+         write(field)
+       when Int64
+         write_octet('L')
          write(field)
        when UInt64
          write_octet('l')
