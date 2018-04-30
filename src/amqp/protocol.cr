@@ -705,9 +705,7 @@ module AMQP::Protocol
     def read_timestamp
       tv_sec = read_int64
       return nil unless tv_sec
-      spec = LibC::Timespec.new
-      spec.tv_sec = tv_sec
-      Time.new(spec)
+      Time.epoch tv_sec
     end
 
     def flush
