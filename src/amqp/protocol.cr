@@ -29,7 +29,6 @@ module AMQP::Protocol
                 UInt8 |
                 UInt16 |
                 UInt32 |
-                UInt64 |
                 Int8 |
                 Int16 |
                 Int32 |
@@ -40,6 +39,7 @@ module AMQP::Protocol
                 String |
                 Array(Field) |
                 Array(UInt8) |
+                Slice(UInt8) |
                 Time |
                 Hash(String, Field)
 
@@ -514,7 +514,7 @@ module AMQP::Protocol
         read_int8
       when 'B'
         read_uint8
-      when 'U'
+      when 's'
         read_int16
       when 'u'
         read_uint16
@@ -522,18 +522,14 @@ module AMQP::Protocol
         read_int32
       when 'i'
         read_uint32
-      when 'L'
-        read_int64
       when 'l'
-        read_uint64
+        read_int64
       when 'f'
         read_float32
       when 'd'
         read_float64
       when 'D'
         read_decimal
-      when 's'
-        read_shortstr
       when 'S'
         read_longstr
       when 'A'
@@ -635,7 +631,7 @@ module AMQP::Protocol
          write_octet('B')
          write(field)
        when Int16
-         write_octet('U')
+         write_octet('s')
          write(field)
        when UInt16
          write_octet('u')
@@ -647,9 +643,6 @@ module AMQP::Protocol
          write_octet('i')
          write(field)
        when Int64
-         write_octet('L')
-         write(field)
-       when UInt64
          write_octet('l')
          write(field)
        when Float32
@@ -660,20 +653,25 @@ module AMQP::Protocol
        when String
          write_octet('S')
          write_longstr(field)
-       when Array(UInt8)
+       when Slice(UInt8)
          write_octet('x')
          write(field.size.to_i32)
          @io.write(Slice.new(field.to_unsafe, field.size))
        when Array
          write_octet('A')
-         write(field.size.to_i32)
-         field.each {|v| write_field(v)}
+         mem = ::IO::Memory.new
+         io = IO.new(mem)
+         field.each { |v| io.write_field(v) }
+         write(mem.bytesize.to_i32)
+         write mem.to_slice
        when Time
          write_octet('T')
          write_timestamp(field)
        when Hash
          write_octet('F')
          write_table(field)
+       when Nil
+         write_octet('V')
        else
          raise FrameError.new("invalid type #{typeof(field)}")
        end
