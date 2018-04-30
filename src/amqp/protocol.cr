@@ -717,11 +717,9 @@ module AMQP::Protocol
     protected def read_byte_array
       len = read_int32
       return nil unless len
-      array = Array(UInt8).new(len) { 0_u8 }
-      unless read(Slice.new(array.to_unsafe, len))
-        return nil
-      end
-      array
+      bytes = Bytes.new(len)
+      read(bytes)
+      bytes
     end
 
     private def reverse(slice)
