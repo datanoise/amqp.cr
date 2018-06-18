@@ -1,4 +1,5 @@
-require "./exchange"
+# require "./exchange"
+require "./channel"
 
 class AMQP::Message
 
@@ -12,7 +13,7 @@ class AMQP::Message
   property delivery_tag : UInt64?
   property redelivered : Bool?
   # these two properties are also provider by 'return' method
-  property exchange : AMQP::Exchange?
+  property channel : AMQP::Channel?
   property key : String?
 
   # provided by amqp 'get' method
@@ -26,25 +27,25 @@ class AMQP::Message
   end
 
   def ack
-    if exchange = @exchange
+    if channel = @channel
       if tag = @delivery_tag
-        exchange.channel.ack(tag)
+        channel.ack(tag)
       end
     end
   end
 
   def reject(requeue = false)
-    if exchange = @exchange
+    if channel = @channel
       if tag = @delivery_tag
-        exchange.channel.reject(tag, requeue)
+        channel.reject(tag, requeue)
       end
     end
   end
 
   def nack(requeue = false)
-    if exchange = @exchange
+    if channel = @channel
       if tag = @delivery_tag
-        exchange.channel.nack(tag, requeue: requeue)
+        channel.nack(tag, requeue: requeue)
       end
     end
   end

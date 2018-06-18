@@ -582,7 +582,7 @@ class AMQP::Channel
     when Protocol::Basic::Deliver
       msg.delivery_tag = content_method.delivery_tag
       msg.redelivered = content_method.redelivered
-      msg.exchange = @exchanges[content_method.exchange]
+      msg.channel = self
       msg.key = content_method.routing_key
       subscriber = @subscribers[content_method.consumer_tag]?
       unless subscriber
@@ -595,7 +595,7 @@ class AMQP::Channel
     when Protocol::Basic::GetOk
       msg.delivery_tag = content_method.delivery_tag
       msg.redelivered = content_method.redelivered
-      msg.exchange = @exchanges[content_method.exchange]
+      msg.channel = self
       msg.key = content_method.routing_key
       msg.message_count = content_method.message_count
       @msg.send(msg)
