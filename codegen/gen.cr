@@ -25,7 +25,10 @@ module CodeGen
     getter :name
     getter :type
 
-    def initialize(@node)
+    @name : String
+    @type : String
+
+    def initialize(@node : XML::Node)
       @name = @node["name"].not_nil!
       @type = @node["type"].not_nil!
     end
@@ -42,7 +45,12 @@ module CodeGen
   end
 
   class Constant
-    def initialize(@node)
+
+    @name : String
+    @value : String?
+    @class : String?
+
+    def initialize(@node : XML::Node)
       @name = @node["name"].not_nil!
       @value = @node["value"]
       @class = @node["class"]?
@@ -75,7 +83,11 @@ module CodeGen
     getter index
     getter methods
 
-    def initialize(@node)
+    @name : String
+    @index : UInt32
+    @methods :  Array(CodeGen::Method)
+
+    def initialize(@node : XML::Node)
       @name = @node["name"].not_nil!.classify
       @index = @node["index"].not_nil!.to_u32
       mnodes = @node.xpath("method") as XML::NodeSet
@@ -102,7 +114,13 @@ module CodeGen
     getter index
     getter name
 
-    def initialize(@cls, @node)
+    @name : String
+    @index : UInt32
+    @has_content : Bool
+    @sync : Bool
+    @fields : Array(CodeGen::Field)
+
+    def initialize(@cls : CodeGen::Class, @node : XML::Node)
       @name = @node["name"].not_nil!.classify
       @index = @node["index"].not_nil!.to_u32
       @has_content = @node["content"]? == "1"
@@ -232,6 +250,9 @@ module CodeGen
   class Field
     getter :name
 
+    @name : String
+    @domain : CodeGen::Domain
+
     def initialize(node)
       @name = node["name"].not_nil!.tr("-", "_")
       @domain = Domain[node["domain"]? || node["type"]?]
@@ -260,7 +281,7 @@ module CodeGen
   end
 
   class ExtraField < Field
-    def initialize(@name, domain, @init)
+    def initialize(@name : String, domain, @init : String)
       @domain = Domain[domain]
     end
 
