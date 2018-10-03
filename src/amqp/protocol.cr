@@ -29,7 +29,8 @@ module AMQP::Protocol
                 UInt8 |
                 UInt16 |
                 UInt32 |
-                UInt64 |
+                Int8 |
+                Int16 |
                 Int32 |
                 Int64 |
                 Float32 |
@@ -38,6 +39,7 @@ module AMQP::Protocol
                 String |
                 Array(Field) |
                 Array(UInt8) |
+                Slice(UInt8) |
                 Time |
                 Hash(String, Field)
 
@@ -424,6 +426,7 @@ module AMQP::Protocol
     def_read(UInt16)
     def_read(UInt32)
     def_read(UInt64)
+    def_read(Int8)
     def_read(Int16)
     def_read(Int32)
     def_read(Int64)
@@ -506,14 +509,19 @@ module AMQP::Protocol
 
       case ty.chr
       when 't'
-        v = read_octet
-        v != 0
+        read_octet != 0_u8
       when 'b'
-        read_octet
+        read_int8
+      when 'B'
+        read_uint8
       when 's'
+        read_int16
+      when 'u'
         read_uint16
       when 'I'
         read_int32
+      when 'i'
+        read_uint32
       when 'l'
         read_int64
       when 'f'
@@ -555,6 +563,7 @@ module AMQP::Protocol
      def_write(UInt16)
      def_write(UInt32)
      def_write(UInt64)
+     def_write(Int8)
      def_write(Int16)
      def_write(Int32)
      def_write(Int64)
@@ -615,16 +624,25 @@ module AMQP::Protocol
        when Bool
          write_octet('t')
          write_octet(field ? 1_u8 : 0_u8)
-       when UInt8
+       when Int8
          write_octet('b')
          write(field)
-       when UInt16
+       when UInt8
+         write_octet('B')
+         write(field)
+       when Int16
          write_octet('s')
          write(field)
-       when UInt32
+       when UInt16
+         write_octet('u')
+         write(field)
+       when Int32
          write_octet('I')
          write(field)
-       when UInt64
+       when UInt32
+         write_octet('i')
+         write(field)
+       when Int64
          write_octet('l')
          write(field)
        when Float32
@@ -635,20 +653,25 @@ module AMQP::Protocol
        when String
          write_octet('S')
          write_longstr(field)
-       when Array(UInt8)
+       when Slice(UInt8)
          write_octet('x')
          write(field.size.to_i32)
          @io.write(Slice.new(field.to_unsafe, field.size))
        when Array
          write_octet('A')
-         write(field.size.to_i32)
-         field.each {|v| write_field(v)}
+         mem = ::IO::Memory.new
+         io = IO.new(mem)
+         field.each { |v| io.write_field(v) }
+         write(mem.bytesize.to_i32)
+         write mem.to_slice
        when Time
          write_octet('T')
          write_timestamp(field)
        when Hash
          write_octet('F')
          write_table(field)
+       when Nil
+         write_octet('V')
        else
          raise FrameError.new("invalid type #{typeof(field)}")
        end
@@ -682,9 +705,7 @@ module AMQP::Protocol
     def read_timestamp
       tv_sec = read_int64
       return nil unless tv_sec
-      spec = LibC::Timespec.new
-      spec.tv_sec = tv_sec
-      Time.new(spec)
+      Time.epoch tv_sec
     end
 
     def flush
@@ -694,11 +715,9 @@ module AMQP::Protocol
     protected def read_byte_array
       len = read_int32
       return nil unless len
-      array = Array(UInt8).new(len) { 0_u8 }
-      unless read(Slice.new(array.to_unsafe, len))
-        return nil
-      end
-      array
+      bytes = Bytes.new(len)
+      read(bytes)
+      bytes
     end
 
     private def reverse(slice)
