@@ -19,9 +19,8 @@ class AMQP::Channel
   getter msg
 
   @channel_id : UInt16
-  @content_method : AMQP::Protocol::Method|Nil
-  @header_frame : Protocol::HeaderFrame|Nil
-
+  @content_method : AMQP::Protocol::Method | Nil
+  @header_frame : Protocol::HeaderFrame | Nil
 
   def initialize(@broker : AMQP::Broker)
     @channel_id = @broker.next_channel_id
@@ -62,13 +61,13 @@ class AMQP::Channel
   # Registers a flow notification callback.
   # The boolean parameter indicates whether to start sending content frames, or not.
   # See `flow` method.
-  def on_flow(&block: Bool ->)
+  def on_flow(&block : Bool ->)
     @flow_callbacks << block
   end
 
   # Registers a channel close callback.
   # The callback block receives code and description as parameters.
-  def on_close(&block: UInt16, String ->)
+  def on_close(&block : UInt16, String ->)
     @close_callbacks << block
   end
 
@@ -153,7 +152,7 @@ class AMQP::Channel
   #
   # See `exchange` method.
   def direct(name, durable = false, auto_delete = false, internal = false,
-               no_wait = false, passive = false, args = Protocol::Table.new)
+             no_wait = false, passive = false, args = Protocol::Table.new)
     exchange(name, "direct", durable, auto_delete, internal, no_wait, passive, args)
   end
 
@@ -161,7 +160,7 @@ class AMQP::Channel
   #
   # See `exchange` method.
   def topic(name, durable = false, auto_delete = false, internal = false,
-               no_wait = false, passive = false, args = Protocol::Table.new)
+            no_wait = false, passive = false, args = Protocol::Table.new)
     exchange(name, "topic", durable, auto_delete, internal, no_wait, passive, args)
   end
 
@@ -169,7 +168,7 @@ class AMQP::Channel
   #
   # See `exchange` method.
   def headers(name, durable = false, auto_delete = false, internal = false,
-               no_wait = false, passive = false, args = Protocol::Table.new)
+              no_wait = false, passive = false, args = Protocol::Table.new)
     exchange(name, "headers", durable, auto_delete, internal, no_wait, passive, args)
   end
 
@@ -213,12 +212,12 @@ class AMQP::Channel
   def queue(name, durable = false, passive = false, exclusive = false,
             auto_delete = false, no_wait = false, args = Protocol::Table.new)
     name = "" unless name
-    unless queue = @queues[name]?
+    if name.empty? || !@queues.has_key?(name)
       queue = Queue.new(self, name, durable, exclusive, auto_delete, args)
       queue.declare(passive, no_wait)
       @queues[name] = queue
     end
-    queue
+    @queues[name]
   end
 
   # Publishes a message.
@@ -280,7 +279,7 @@ class AMQP::Channel
 
   # Registers on confirm callback.
   # See `confirm` method.
-  def on_confirm(&block: UInt64, Bool ->)
+  def on_confirm(&block : UInt64, Bool ->)
     @on_confirm_callback = block
   end
 
@@ -619,7 +618,7 @@ class AMQP::Channel
       end
     end
 
-    unacked.each {|v| @pending_confirms << v}
+    unacked.each { |v| @pending_confirms << v }
   end
 
   private def confirm_multiple(delivery_tag, ack)
