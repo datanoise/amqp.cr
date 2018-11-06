@@ -15,7 +15,7 @@ module Timed
     private def sleep
       interval = Time.now - @start_time
       interval = @interval - interval
-      Fiber.sleep interval.total_seconds
+      sleep interval.total_seconds
     end
 
     private def receive_impl
@@ -52,7 +52,7 @@ module Timed
       end
 
       @queue.shift.tap do
-        Scheduler.enqueue @senders
+        Crystal::Scheduler.enqueue @senders
         @senders.clear
       end
     end
@@ -64,7 +64,7 @@ module Timed
     private def sleep(start_time, interval)
       cur_interval = Time.now - start_time
       interval = interval - cur_interval
-      Fiber.sleep interval.total_seconds
+      sleep interval.total_seconds
     end
   end
 end
