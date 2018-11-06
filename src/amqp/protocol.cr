@@ -83,7 +83,7 @@ module AMQP::Protocol
                    @reply_to = "",
                    @expiration = "",
                    @message_id = "",
-                   @timestamp = Time.epoch(0),
+                   @timestamp = Time::UNIX_EPOCH.as(Time),
                    @type = "",
                    @user_id = "",
                    @app_id = "",
@@ -174,7 +174,7 @@ module AMQP::Protocol
       flags = flags | FLAG_REPLY_TO         unless @reply_to.empty?
       flags = flags | FLAG_EXPIRATION       unless @expiration.empty?
       flags = flags | FLAG_MESSAGE_ID       unless @message_id.empty?
-      flags = flags | FLAG_TIMESTAMP        unless @timestamp.epoch == 0
+      flags = flags | FLAG_TIMESTAMP        unless @timestamp.to_unix == 0
       flags = flags | FLAG_TYPE             unless @type.empty?
       flags = flags | FLAG_USER_ID          unless @user_id.empty?
       flags = flags | FLAG_APP_ID           unless @app_id.empty?
@@ -191,7 +191,7 @@ module AMQP::Protocol
       io.write_shortstr(@reply_to)         unless @reply_to.empty?
       io.write_shortstr(@expiration)       unless @expiration.empty?
       io.write_shortstr(@message_id)       unless @message_id.empty?
-      io.write_timestamp(@timestamp)       unless @timestamp.epoch == 0
+      io.write_timestamp(@timestamp)       unless @timestamp.to_unix == 0
       io.write_shortstr(@type)             unless @type.empty?
       io.write_shortstr(@user_id)          unless @user_id.empty?
       io.write_shortstr(@app_id)           unless @app_id.empty?
@@ -607,7 +607,7 @@ module AMQP::Protocol
      end
 
      def write_timestamp(v : Time)
-       write(v.epoch.to_i64)
+       write(v.to_unix.to_i64)
      end
 
      protected def write_field(field)
@@ -682,9 +682,7 @@ module AMQP::Protocol
     def read_timestamp
       tv_sec = read_int64
       return nil unless tv_sec
-      spec = LibC::Timespec.new
-      spec.tv_sec = tv_sec
-      Time.new(spec)
+      Time.unix tv_sec
     end
 
     def flush
