@@ -26,6 +26,8 @@ module AMQP
     property! frame_max
     # A number of seconds of inactivity before sending a heartbeat frame.
     property! heartbeat
+    # Whether to use SSL for the connection
+    property! ssl
 
     def initialize(@host = "127.0.0.1",
                    @port = 5672,
@@ -36,12 +38,17 @@ module AMQP
                    @frame_max = 0_u32,
                    @heartbeat : Time::Span = 0.seconds,
                    @logger = Logger.new(STDOUT),
-                   @log_level : Logger::Severity = Logger::INFO)
+                   @log_level : Logger::Severity = Logger::INFO,
+                   @ssl = false)
       @logger.level = @log_level
     end
 
     def log_level=(level)
       @logger.level = level
+    end
+
+    def ssl?
+      @ssl
     end
   end
 
@@ -83,6 +90,39 @@ module AMQP
       ensure
         conn.close
       end
+    end
+
+    def self.start(uri : URI,
+                   log_level : Logger::Severity = Logger::INFO)
+      use_ssl = uri.scheme == "amqp+ssl" || uri.scheme == "amqps"
+
+      start(Config.new(
+        host: uri.host || "127.0.0.1",
+        port: if port = uri.port
+                port
+              elsif use_ssl
+                5671
+              else
+                5672
+              end,
+        username: uri.user || "guest",
+        password: uri.password || "guest",
+        vhost: uri.path.to_s.sub(%r(\A/), ""),
+        channel_max: 0_u16,
+        frame_max: 0_u32,
+        heartbeat: 0.minute,
+        logger: Logger.new(STDOUT),
+        log_level: log_level,
+        ssl: use_ssl,
+      )) { |conn| yield conn }
+    end
+
+    def self.start(url : String,
+                   log_level = Logger::INFO)
+      start(
+        URI.parse(url),
+        log_level: log_level,
+      ) { |connection| yield connection }
     end
 
     # Enters a processing loop which prevents the program termination. Useful when
